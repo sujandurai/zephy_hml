@@ -130,10 +130,10 @@
       background: transparent;
       border: 1px solid rgba(255,255,255,0.15);
       color: #94a3b8;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 600;
       transition: all 0.2s ease;
       display: flex;
@@ -936,7 +936,7 @@
 </head>
 <body>
 
-  <!-- Top Header with 5 Navigation Tabs -->
+  <!-- Top Header with 7 Navigation Tabs -->
   <header class="site-header">
     <div class="header-left">
       <div class="header-title">
@@ -944,10 +944,14 @@
       </div>
       <nav class="header-nav">
         <button class="nav-tab active" onclick="switchTab('history')">📖 Our History</button>
-        <button class="nav-tab" onclick="switchTab('comparison')">⚖️ GC00 vs LS00 Comparison</button>
+        <button class="nav-tab" onclick="switchTab('comparison')">⚖️ GC00 vs LS00</button>
         <button class="nav-tab" onclick="switchTab('soc-doc')">🏛️ SoC in Zephyr</button>
-        <button class="nav-tab" onclick="switchTab('dts-doc')">🌲 Devicetree (DTS)</button>
-        <button class="nav-tab" onclick="switchTab('board-doc')">⚙️ Board Documentation</button>
+        <button class="nav-tab" onclick="switchTab('dts-doc')">🌲 dts/arm/microchip</button>
+        <button class="nav-tab" onclick="switchTab('bindings-doc')">📑 dts/bindings &amp; dt-bindings</button>
+        <button class="nav-tab" onclick="switchTab('hal-packs-doc')">📦 HAL / DFP Packs</button>
+        <button class="nav-tab" onclick="switchTab('drivers-doc')">🔌 Drivers in Zephyr</button>
+        <button class="nav-tab" onclick="switchTab('boards-layer')">🛹 Boards Layer</button>
+        <button class="nav-tab" onclick="switchTab('board-doc')">⚙️ Hardware &amp; Docs</button>
       </nav>
     </div>
     <button class="theme-toggle-btn" onclick="toggleTheme()">🌓 Theme</button>
@@ -2324,170 +2328,352 @@ Zephyr Pre-Kernel Initialization (PRE_KERNEL_1)</pre>
       </div>
     </div>
 
-    <!-- TAB 4: DEVICETREE (DTS) EXPLANATION (NEW DEDICATED PAGE) -->
+    <!-- TAB 4: DTS / ARM / MICROCHIP (SOC HARDWARE DEVICETREE ARCHITECTURE) -->
     <div id="page-dts-doc" class="page-section">
       <div class="content-card">
 
-        <h1 class="hero-title">Devicetree (DTS) in Zephyr RTOS</h1>
+        <h1 class="hero-title">dts/arm/microchip &mdash; SoC Hardware Devicetree</h1>
         <p class="hero-subtitle">
-          How Zephyr Describes Hardware Topology, Peripheral Existence, Node Anatomy, Bindings, and the Two-Layer Split
+          Complete Overview of <code>dts/arm/microchip/pic32c/</code>: The 7 Microchip PIC32C Families, Dedicated <code>pic32cm_ls</code> Architecture, and DTSI Breakdown
         </p>
 
-        <!-- 1. Purpose of this section -->
+        <!-- 1. Purpose of dts/arm/microchip -->
         <div class="concept-card">
-          <h3>📌 1. Purpose of the Devicetree Layer</h3>
+          <h3>📌 1. Purpose of the <code>dts/arm/microchip/</code> Layer</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Silicon Hardware Topology:</strong> Contains the Devicetree Include files (<code>.dtsi</code>) describing physical silicon architecture for all Microchip Arm Cortex microcontrollers in the upstream Zephyr hardware tree.</li>
+            <li><strong>Separation of Concerns:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong><code>dts/arm/microchip/</code> (SoC Silicon):</strong> Defines physical silicon features (CPU core, MPU, memory boundaries, peripheral register base addresses).</li>
+                <li><strong><code>boards/</code> (Board Wiring):</strong> Defines physical PCB pin wiring, enabled peripheral switches, LEDs, buttons, and active oscillators.</li>
+                <li><strong><code>dts/bindings/</code> (YAML Schema):</strong> Defines compile-time rules and validation schemas for peripheral properties.</li>
+              </ul>
+            </li>
+            <li><strong>One-Liner to Memorize:</strong>
+              <div class="quote-box" style="font-size: 0.95rem; margin: 8px 0; font-style: normal;">
+                &ldquo;<strong>The <code>dts/arm/microchip/</code> files define the complete silicon hardware blueprint of what exists inside the chip packaging.</strong>&rdquo;
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2. The 7 PIC32C Families in dts/arm/microchip/pic32c/ -->
+        <div class="concept-card">
+          <h3>🗂️ 2. The 7 PIC32C Families in <code>dts/arm/microchip/pic32c/</code></h3>
           <p>
-            This section explains the <strong>Devicetree layer</strong> &mdash; how Zephyr describes hardware structure and peripheral existence, separate from the SoC C boot code and separate from board-level wiring.
+            When inspecting <code>zephyr/dts/arm/microchip/pic32c/</code>, there are exactly <strong>7 microcontroller families</strong>:
           </p>
-        </div>
 
-        <!-- 2. What Devicetree Actually Is -->
-        <div class="concept-card">
-          <h3>💡 2. What Devicetree Actually Is</h3>
-          <div class="quote-box" style="font-size: 1.05rem; margin: 8px 0; font-style: normal;">
-            &ldquo;<strong>Devicetree is a data structure &mdash; not code &mdash; that describes what hardware exists and how it's connected, so drivers can be generic instead of hardcoded per-board.</strong>&rdquo;
+          <div class="code-box" style="margin: 10px 0;">
+            <div class="code-box-header"><span>TERMINAL: ls -l zephyr/dts/arm/microchip/pic32c/</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">sujan@sujan-Victus:~/zephyrproject/zephyr/dts/arm/microchip/pic32c$ ls -l
+total 28
+drwxrwxr-x 5 sujan sujan 4096 Aug  9 17:33 pic32ck_sg_gc  # PIC32CK SG/GC (Arm Cortex-M33)
+drwxrwxr-x 5 sujan sujan 4096 Aug  9 17:33 pic32cm_jh     # PIC32CM JH (Arm Cortex-M0+)
+drwxrwxr-x 4 sujan sujan 4096 Aug 11 16:16 pic32cm_ls     # PIC32CM LS (Arm Cortex-M23 + TrustZone) [OUR PORT]
+drwxrwxr-x 4 sujan sujan 4096 Aug  9 17:33 pic32cm_pl     # PIC32CM PL (Arm Cortex-M0+)
+drwxrwxr-x 5 sujan sujan 4096 Aug  9 17:33 pic32cm_sg_gc  # PIC32CM SG/GC (Arm Cortex-M0+)
+drwxrwxr-x 6 sujan sujan 4096 Aug  9 17:33 pic32cx_sg     # PIC32CX SG (Arm Cortex-M4F)
+drwxrwxr-x 6 sujan sujan 4096 Aug  9 17:33 pic32cz_ca     # PIC32CZ CA (Arm Cortex-M7)</pre>
           </div>
-        </div>
 
-        <!-- 3. Where DTS Files Live for Your SoC -->
-        <div class="concept-card">
-          <h3>📁 3. Where DTS Files Live for Your SoC</h3>
-          <div class="code-box">
-            <div class="code-box-header">
-              <span>SOC DEVICETREE LOCATION</span>
-              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-            </div>
-            <pre style="color: #38bdf8;">soc/microchip/pic32c/pic32cm_ls/
-├── common/
-│   └── pic32cm_ls_48.dtsi       ← Common 48-pin peripheral definitions
-└── pic32cm_ls00/
-    └── pic32cm5164ls00048.dtsi  ← SoC-level chip definition (Memory + CPU + Peripherals)</pre>
-          </div>
-          <p style="font-size: 0.88rem; color: #64748b;">
-            <em>Role:</em> This <code>.dtsi</code> is <strong>included by every board</strong> that uses this chip family &mdash; it represents the shared &ldquo;menu&rdquo; of everything the physical silicon can do.
-          </p>
-        </div>
-
-        <!-- 4. Two-Layer DTS Split -->
-        <div class="concept-card">
-          <h3>⚡ 4. Two-Layer DTS Split (Core Concept)</h3>
-          <div class="table-responsive">
+          <div class="table-responsive" style="margin-top: 14px;">
             <table class="doc-table">
               <thead>
                 <tr>
-                  <th style="width: 15%;">Layer</th>
-                  <th style="width: 25%;">File</th>
-                  <th style="width: 30%;">Declares</th>
-                  <th style="width: 30%;">Example</th>
+                  <th style="width: 22%;">Family Directory</th>
+                  <th style="width: 25%;">CPU Core</th>
+                  <th style="width: 25%;">Hardware Architecture</th>
+                  <th style="width: 28%;">Status &amp; Role</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>SoC Layer</strong></td>
-                  <td><code>pic32cm5164ls00048.dtsi</code></td>
-                  <td>Peripheral <em>exists</em> on silicon, disabled by default.</td>
-                  <td><code>sercom0: sercom@...</code> with <code>status = "disabled";</code></td>
+                  <td><code>pic32ck_sg_gc/</code></td>
+                  <td>Arm® Cortex®-M33</td>
+                  <td>TrustZone, Crypto, CAN-FD</td>
+                  <td>Upstream Microchip family</td>
                 </tr>
                 <tr>
-                  <td><strong>Board Layer</strong></td>
-                  <td><code>pic32cm_ls00_cnano.dts</code></td>
-                  <td>Peripheral <em>is used here</em>, enabled and wired.</td>
-                  <td><code>&amp;sercom0 { status = "okay"; ... };</code></td>
+                  <td><code>pic32cm_jh/</code></td>
+                  <td>Arm® Cortex®-M0+</td>
+                  <td>Dual CAN-FD, Touch, Motor</td>
+                  <td>Upstream Microchip family</td>
+                </tr>
+                <tr style="background: rgba(14, 165, 233, 0.12); font-weight: 600;">
+                  <td><code>pic32cm_ls/</code> ⭐</td>
+                  <td>Arm® Cortex®-M23</td>
+                  <td>ARMv8-M TrustZone, Port G1, SERCOM</td>
+                  <td><strong>Our Port (PIC32CM5164LS00048)</strong></td>
+                </tr>
+                <tr>
+                  <td><code>pic32cm_pl/</code></td>
+                  <td>Arm® Cortex®-M0+</td>
+                  <td>Low Power, 5V Operation</td>
+                  <td>Upstream Microchip family</td>
+                </tr>
+                <tr>
+                  <td><code>pic32cm_sg_gc/</code></td>
+                  <td>Arm® Cortex®-M0+</td>
+                  <td>General Purpose / Connectivity</td>
+                  <td>Upstream Microchip family</td>
+                </tr>
+                <tr>
+                  <td><code>pic32cx_sg/</code></td>
+                  <td>Arm® Cortex®-M4F</td>
+                  <td>FPU, DSP, Dual Flash Banks</td>
+                  <td>Upstream Microchip family</td>
+                </tr>
+                <tr>
+                  <td><code>pic32cz_ca/</code></td>
+                  <td>Arm® Cortex®-M7</td>
+                  <td>300 MHz High-Performance, Ethernet</td>
+                  <td>Upstream Microchip family</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="speaking-tip-box">
-            <strong>🗣️ What to Say Out Loud:</strong><br/>
-            &ldquo;<em>The SoC dtsi says 'this peripheral exists at this address.' The board dts says 'and on this board, it's turned on and routed to these pins.'</em>&rdquo;
-          </div>
         </div>
 
-        <!-- 5. Node Anatomy -->
+        <!-- 3. Internal Directory Structure of pic32cm_ls/ -->
         <div class="concept-card">
-          <h3>🔬 5. Node Anatomy &mdash; Real Walkthrough</h3>
-          <p>Here is how a real peripheral (SERCOM0 UART / PORTA) is declared in the SoC layer and enabled in the Board layer:</p>
-
-          <div class="code-box">
-            <div class="code-box-header">
-              <span>SoC-Level (soc/.../pic32cm5164ls00048.dtsi)</span>
-              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-            </div>
-            <pre>/* SoC-level: declares existence, address, IRQ, and keeps it disabled */
-sercom0: sercom@42000000 {
-	compatible = "microchip,sercom-uart", "atmel,sam0-uart";
-	reg = &lt;0x42000000 0x40&gt;;
-	interrupts = &lt;65 0&gt;, &lt;66 0&gt;, &lt;67 0&gt;, &lt;68 0&gt;;
-	status = "disabled";
-};</pre>
-          </div>
-
-          <div class="code-box">
-            <div class="code-box-header">
-              <span>Board-Level (boards/.../pic32cm_ls00_cnano.dts)</span>
-              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-            </div>
-            <pre>/* Board-level: flips status to okay, sets baud rate, and routes pins */
-&amp;sercom0 {
-	status = "okay";
-	current-speed = &lt;115200&gt;;
-	pinctrl-0 = &lt;&amp;sercom0_uart_default&gt;;
-	pinctrl-names = "default";
-};</pre>
-          </div>
-
-          <h4 style="margin: 14px 0 8px; font-size: 1rem;">Field Breakdown:</h4>
-          <ul style="padding-left: 20px; font-size: 0.88rem; line-height: 1.6;">
-            <li><code>compatible</code> &mdash; Binds the node to a specific Zephyr C driver (e.g. <code>uart_sam0.c</code>).</li>
-            <li><code>reg</code> &mdash; Base address (<code>0x42000000</code>) and size (<code>0x40</code>) &mdash; ties directly to the SoC APB address map.</li>
-            <li><code>interrupts</code> &mdash; NVIC IRQ line numbers (IRQs 65, 66, 67, 68 for SERCOM0).</li>
-            <li><code>status</code> &mdash; The enable/disable switch flipped by the board layer.</li>
-          </ul>
-        </div>
-
-        <!-- 6. Bindings -->
-        <div class="concept-card">
-          <h3>📑 6. Devicetree Bindings</h3>
+          <h3>📁 3. Internal Directory Structure of <code>pic32cm_ls/</code></h3>
           <p>
-            Every <code>compatible = "..."</code> string in Devicetree maps to a <strong>binding YAML file</strong> located in <code>dts/bindings/</code>:
+            Following the exact pattern of the other 6 families in <code>pic32c/</code>, we created <code>pic32cm_ls/</code> with a <code>common/</code> directory and a series-specific directory (<code>pic32cm_ls00/</code>):
           </p>
-          <ul style="padding-left: 20px; font-size: 0.88rem; line-height: 1.6;">
-            <li>Defines all valid properties, types (integers, strings, arrays), and mandatory fields for that peripheral.</li>
-            <li><strong>Compile-Time Safety:</strong> The Zephyr <code>west build</code> system parses these YAML bindings at compile-time to catch Devicetree mistakes and illegal pin configurations before code ever flashes to the MCU.</li>
-          </ul>
-        </div>
-
-        <!-- 7. Why Zephyr Does It This Way -->
-        <div class="concept-card">
-          <h3>🎯 7. Why Zephyr Does It This Way</h3>
-          <div class="quote-box" style="font-size: 1.05rem; font-style: normal; line-height: 1.7;">
-            &ldquo;Hardcoding addresses in driver C code would mean rewriting the driver for every board. Devicetree separates <strong>'hardware topology'</strong> from <strong>'driver logic,'</strong> so the same SERCOM UART driver works on any board &mdash; it simply reads whatever address and pin configuration the Devicetree supplies at build time.&rdquo;
+          <div class="code-box">
+            <div class="code-box-header"><span>dts/arm/microchip/pic32c/pic32cm_ls/</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">dts/arm/microchip/pic32c/pic32cm_ls/
+├── common/
+│   ├── pic32cm_ls.dtsi          ← Root SoC architecture (CPU, MPU, SRAM0, Port G1, NVIC)
+│   ├── pic32cm_ls_48.dtsi       ← Package-level peripheral layout for 48-pin variant
+│   └── pic32cm_5164_ls.dtsi     ← Memory partition (512KB Flash @ 0x0, 64KB SRAM @ 0x20000000)
+└── pic32cm_ls00/
+    └── pic32cm5164ls00048.dtsi  ← Top-level chip DTSI pulling together memory &amp; package</pre>
           </div>
         </div>
 
-        <!-- 8. What You Actually Changed -->
+        <!-- 4. File-by-File Technical Breakdown -->
         <div class="concept-card">
-          <h3>🛠️ 8. What We Actually Changed &amp; Implemented</h3>
-          <ul style="padding-left: 20px; font-size: 0.88rem; line-height: 1.6;">
-            <li><strong>Flipped Peripheral Status:</strong> Enabled <code>&amp;porta</code>, <code>&amp;portb</code>, and <code>&amp;systick</code> by overriding them to <code>status = "okay"</code> in <code>pic32cm_ls00_cnano.dts</code>.</li>
-            <li><strong>Corrected LS00 Architecture:</strong> Pruned unsupported CAN-FD nodes present in GC00, updated SRAM memory node to <strong>64 KB</strong> (<code>0x20000000</code>), and set CPU core clock to <strong>48 MHz</strong>.</li>
-            <li><strong>Configured User I/O Aliases:</strong> Created <code>aliases { led0 = &amp;led0; sw0 = &amp;button0; }</code> for Yellow LED0 (PA15) and User Button SW0 (PA23).</li>
+          <h3>📑 4. File-by-File Technical Breakdown</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Point 1 &mdash; <code>common/pic32cm_ls.dtsi</code> (Root SoC Node):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Includes <code>&lt;arm/armv8-m.dtsi&gt;</code> and <code>&lt;zephyr/dt-bindings/gpio/gpio.h&gt;</code>.</li>
+                <li>Declares the <code>cpu0: cpu@0</code> node with <code>compatible = "arm,cortex-m23"</code> and ARMv8-M MPU at <code>0xe000ed90</code>.</li>
+                <li>Declares default SRAM0 at <code>0x20000000</code>.</li>
+                <li>Instantiates Port G1 pinmux controller <code>pinctrl@40003200</code> with child GPIO banks <code>porta</code> and <code>portb</code>.</li>
+                <li>Configures NVIC priority bits: <code>&amp;nvic { arm,num-irq-priority-bits = &lt;2&gt;; };</code>.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong>Point 2 &mdash; <code>common/pic32cm_ls_48.dtsi</code> (Package Include):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Represents the physical 48-pin chip package layout.</li>
+                <li>Includes <code>pic32cm_ls.dtsi</code>, ensuring only pins physically pinned out on 48-pin packages (PORTA and PORTB) are visible to board DTS.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong>Point 3 &mdash; <code>common/pic32cm_5164_ls.dtsi</code> (Memory Include):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Establishes physical on-chip memory limits using Zephyr size macros:
+                  <ul>
+                    <li><code>flash0: flash@0 { reg = &lt;0x0 DT_SIZE_K(512)&gt;; };</code> (512 KiB Flash).</li>
+                    <li><code>sram0: memory@20000000 { reg = &lt;0x20000000 DT_SIZE_K(64)&gt;; };</code> (64 KiB SRAM).</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong>Point 4 &mdash; <code>pic32cm_ls00/pic32cm5164ls00048.dtsi</code> (Chip Top-Level):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Top-level part-number file included directly by board Devicetree files (<code>pic32cm_ls00_cnano.dts</code>).</li>
+                <li>Includes <code>&lt;mem.h&gt;</code>, <code>pic32cm_ls_48.dtsi</code>, and <code>pic32cm_5164_ls.dtsi</code>.</li>
+              </ul>
+            </li>
           </ul>
         </div>
 
-        <!-- 9. Bring-Up Diagnostic Note -->
+        <!-- 4. Devicetree Inclusion Hierarchy Chain -->
+        <div class="concept-card">
+          <h3>🔗 4. Devicetree Inclusion Hierarchy Chain</h3>
+          <p>The exact chain of Devicetree inclusions processed by <code>west build</code> during compilation:</p>
+          <div class="code-box" style="margin: 10px 0;">
+            <div class="code-box-header"><span>INCLUSION HIERARCHY</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8; text-align: center;">Board Devicetree (boards/.../pic32cm_ls00_cnano.dts)
+   ↓ Includes: #include &lt;microchip/pic32c/pic32cm_ls/pic32cm_ls00/pic32cm5164ls00048.dtsi&gt;
+SoC Top-Level DTSI (pic32cm5164ls00048.dtsi)
+   ├── Includes: pic32cm_5164_ls.dtsi (Sets 512KB Flash &amp; 64KB SRAM)
+   └── Includes: pic32cm_ls_48.dtsi (48-pin package)
+          ↓ Includes: pic32cm_ls.dtsi (Root SoC definition)
+                 ↓ Includes: &lt;arm/armv8-m.dtsi&gt; (Arm Cortex-M Architecture)</pre>
+          </div>
+        </div>
+
+        <!-- 5. Memory Partitioning & Linker Integration -->
+        <div class="concept-card">
+          <h3>🗺️ 5. Memory Sizing &amp; Linker Script Integration</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Flash Memory Mapping:</strong> <code>reg = &lt;0x00000000 DT_SIZE_K(512)&gt;</code> &mdash; stores interrupt vector table, kernel code, application logic, and <code>const</code> tables.</li>
+            <li><strong>SRAM Memory Mapping:</strong> <code>reg = &lt;0x20000000 DT_SIZE_K(64)&gt;</code> &mdash; stores execution stacks, thread control blocks (TCBs), and initialized data (<code>.data</code> / <code>.bss</code>).</li>
+            <li><strong>Zero Hardcoded Linker Scripts:</strong> Zephyr's CMake generator automatically generates <code>linker.cmd</code> memory bounds directly from these Devicetree nodes.</li>
+          </ul>
+        </div>
+
+        <!-- 6. Port G1 GPIO & Pin Controller Mapping -->
+        <div class="concept-card">
+          <h3>🔌 6. Port G1 GPIO &amp; Pin Controller Mapping</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Hierarchical Sub-Node Architecture:</strong>
+              <div class="code-box" style="margin: 8px 0;">
+                <div class="code-box-header"><span>PINCTRL &amp; GPIO SUB-NODES</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                <pre>pinctrl: pinctrl@40003200 {
+	compatible = "microchip,port-g1-pinctrl";
+	reg = &lt;0x40003200 0x100&gt;;
+	ranges = &lt;0x40003200 0x40003200 0x100&gt;;
+
+	porta: gpio@40003200 {
+		compatible = "microchip,port-g1-gpio";
+		reg = &lt;0x40003200 0x80&gt;;
+		gpio-controller;
+		#gpio-cells = &lt;2&gt;;
+		status = "okay";
+	};
+
+	portb: gpio@40003280 {
+		compatible = "microchip,port-g1-gpio";
+		reg = &lt;0x40003280 0x80&gt;;
+		gpio-controller;
+		#gpio-cells = &lt;2&gt;;
+		status = "okay";
+	};
+};</pre>
+              </div>
+            </li>
+            <li><strong>Decoupled Control:</strong> The pin multiplexer (<code>microchip,port-g1-pinctrl</code>) handles pin peripheral multiplexing (GCLK, SERCOM, TC), while child nodes (<code>microchip,port-g1-gpio</code>) handle bitwise I/O read/write operations.</li>
+          </ul>
+        </div>
+
+        <!-- 7. Core CPU & NVIC Priority Configuration -->
+        <div class="concept-card">
+          <h3>⚡ 7. Core CPU &amp; NVIC Priority Configuration</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Arm Cortex-M23 Core:</strong> Defined under <code>cpus { cpu0: cpu@0 { compatible = "arm,cortex-m23"; }; };</code>.</li>
+            <li><strong>ARMv8-M MPU:</strong> Defined at memory address <code>0xe000ed90</code> with size <code>0x40</code>.</li>
+            <li><strong>NVIC Interrupt Priority:</strong> <code>&amp;nvic { arm,num-irq-priority-bits = &lt;2&gt;; };</code> &mdash; establishes 4 priority levels (0 to 3) matching Cortex-M23 silicon specifications.</li>
+          </ul>
+        </div>
+
+        <!-- 8. What We Wrote & Implemented -->
+        <div class="concept-card">
+          <h3>🛠️ 8. What We Wrote &amp; Implemented (Our Work)</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Created Dedicated Hierarchy:</strong> Built the new <code>dts/arm/microchip/pic32c/pic32cm_ls/</code> directory tree following modern Zephyr upstream conventions.</li>
+            <li><strong>Configured Exact Silicon Bounds:</strong> Configured 512KB Flash and 64KB SRAM for part number <code>pic32cm5164ls00048</code>.</li>
+            <li><strong>Mapped Port G1 Pinmux &amp; GPIO:</strong> Set up <code>pinctrl@40003200</code> with PORTA (<code>0x40003200</code>) and PORTB (<code>0x40003280</code>).</li>
+            <li><strong>Verified APB Register Offsets:</strong> Validated all peripheral base addresses against the Microchip PIC32CM LS00 Family Datasheet (DS60001615).</li>
+          </ul>
+        </div>
+
+        <!-- 9. Viva / Technical Review Speaking Script -->
         <div class="concept-card" style="border: 2px solid #0284c7;">
-          <h3>🩺 9. Bring-Up Diagnostic Experience</h3>
+          <h3>🗣️ 9. Review / Viva Speaking Script</h3>
           <div class="speaking-tip-box" style="font-size: 0.95rem; line-height: 1.7;">
-            <strong>🗣️ How to Describe DTS Issues in Viva / Reviews:</strong><br/>
-            &ldquo;<em>Most Devicetree issues show up as build-time errors from binding mismatches, or as a peripheral silently not initializing because its <code>status</code> was still <code>disabled</code> &mdash; not as SoC-level clock problems.</em>&rdquo;
+            &ldquo;<em>We structured our SoC Devicetree in <code>dts/arm/microchip/pic32c/pic32cm_ls/</code> across modular DTSI files. The root <code>pic32cm_ls.dtsi</code> defines the Arm Cortex-M23 CPU, MPU, NVIC, and Port G1 pin controller. Package includes (<code>pic32cm_ls_48.dtsi</code>) and memory includes (<code>pic32cm_5164_ls.dtsi</code> with 512KB Flash and 64KB SRAM) are assembled into the top-level <code>pic32cm5164ls00048.dtsi</code>, allowing clean reuse across different pinout and memory variants.</em>&rdquo;
+          </div>
+        </div>
+
+        <!-- Interactive dts/arm/microchip Explorer -->
+        <h2 class="section-heading">Interactive dts/arm/microchip Source Explorer</h2>
+        <div class="ide-container">
+          <div class="ide-sidebar">
+            <div class="sidebar-head"><span>DTS / ARM / MICROCHIP</span></div>
+            <div class="folder-group-title">📁 common</div>
+            <div class="ide-file-item active" onclick="loadArmDtsIdeFile('pic32cm_ls-dtsi', this)">📄 pic32cm_ls.dtsi</div>
+            <div class="ide-file-item" onclick="loadArmDtsIdeFile('pic32cm_ls_48-dtsi', this)">📄 pic32cm_ls_48.dtsi</div>
+            <div class="ide-file-item" onclick="loadArmDtsIdeFile('pic32cm_5164_ls-dtsi', this)">📄 pic32cm_5164_ls.dtsi</div>
+            <div class="folder-group-title">📁 pic32cm_ls00</div>
+            <div class="ide-file-item" onclick="loadArmDtsIdeFile('pic32cm5164ls00048-dtsi', this)">📄 pic32cm5164ls00048.dtsi</div>
+          </div>
+          <div class="ide-editor-pane">
+            <div class="ide-tabs-bar">
+              <div id="arm-dts-ide-active-tab" class="ide-tab active"><span>pic32cm_ls.dtsi</span></div>
+            </div>
+            <div id="arm-dts-ide-code-content" class="ide-code-view">
+              <pre id="arm-dts-ide-pre">/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m23";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x10000>;
+		};
+
+		pinctrl: pinctrl@40003200 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40003200 0x100>;
+			ranges = <0x40003200 0x40003200 0x100>;
+
+			porta: gpio@40003200 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x40003200 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "okay";
+			};
+
+			portb: gpio@40003280 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x40003280 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "okay";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};</pre>
+            </div>
+            <div id="arm-dts-ide-explanation" class="ide-explanation-bar">
+              <strong>💡 File Summary:</strong> Root SoC Devicetree definition defining the Arm Cortex-M23 CPU core, ARMv8-M MPU (<code>0xe000ed90</code>), default SRAM0 base (<code>0x20000000</code>), Port G1 Pin Controller (<code>0x40003200</code>), PORTA/PORTB GPIO controllers, and 2-bit NVIC interrupt priority.
+            </div>
           </div>
         </div>
 
         <!-- Navigation Buttons -->
         <div style="margin-top: 28px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button class="nav-tab active" onclick="switchTab('board-doc')" style="display: inline-flex;">
-            👉 Proceed to Board Documentation &amp; Programming Guide
+          <button class="nav-tab active" onclick="switchTab('bindings-doc')" style="display: inline-flex;">
+            👉 Proceed to dts/bindings &amp; dt-bindings
           </button>
           <button class="nav-tab" onclick="switchTab('soc-doc')" style="display: inline-flex;">
             👉 Review SoC Architecture Guide
@@ -2503,7 +2689,943 @@ sercom0: sercom@42000000 {
       </div>
     </div>
 
-    <!-- TAB 5: BOARD DOCUMENTATION (ORIGINAL CLEAN VERSION) -->
+    <!-- TAB 5: DTS / BINDINGS & DT-BINDINGS (YAML SCHEMAS & HEADER CONSTANTS) -->
+    <div id="page-bindings-doc" class="page-section">
+      <div class="content-card">
+
+        <h1 class="hero-title">dts/bindings &amp; dt-bindings &mdash; Schemas &amp; Header Constants</h1>
+        <p class="hero-subtitle">
+          Dedicated Architecture Guide: Devicetree YAML Validation Schemas (<code>dts/bindings/</code>) and Shared C/DTS Header Constants (<code>include/zephyr/dt-bindings/</code>)
+        </p>
+
+        <!-- 1. Purpose of dts/bindings and dt-bindings -->
+        <div class="concept-card">
+          <h3>📌 1. Purpose of <code>dts/bindings/</code> and <code>dt-bindings/</code></h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>The Triad of Zephyr Devicetree:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong>1. <code>dts/arm/microchip/</code> (Hardware Topology):</strong> Declares node existence, base addresses (<code>0x40003000</code>), and IRQs (&lt;65 0&gt;).</li>
+                <li><strong>2. <code>dts/bindings/</code> (YAML Schemas):</strong> Enforces the structure, types, mandatory properties, and allowed values for each compatible node.</li>
+                <li><strong>3. <code>include/zephyr/dt-bindings/</code> (Shared Header Constants):</strong> Supplies preprocessor constants (<code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>) shared between DTS and C drivers.</li>
+              </ul>
+            </li>
+            <li><strong>Compile-Time Validation:</strong> Zephyr's <code>gen_defines.py</code> and <code>edtlib.py</code> parse YAML schemas at compile time to validate all hardware nodes before code ever compiles, catching pin and memory misconfigurations early.</li>
+            <li><strong>One-Liner to Memorize:</strong>
+              <div class="quote-box" style="font-size: 0.95rem; margin: 8px 0; font-style: normal;">
+                &ldquo;<strong>YAML bindings in <code>dts/bindings/</code> are the rulebook that validates hardware nodes, while headers in <code>dt-bindings/</code> provide human-readable flag macros for both DTS files and C driver code.</strong>&rdquo;
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2. File & Directory Hierarchy -->
+        <div class="concept-card">
+          <h3>📁 2. File &amp; Directory Structure (Bindings &amp; Headers)</h3>
+          <div class="code-box">
+            <div class="code-box-header"><span>dts/bindings/ &amp; include/zephyr/dt-bindings/</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">zephyr/
+├── dts/bindings/                         ← Devicetree YAML Validation Schemas
+│   ├── gpio/
+│   │   ├── atmel,sam0-gpio.yaml         ← Port G1 GPIO controller schema (#gpio-cells: 2)
+│   │   └── gpio-controller.yaml         ← Base generic GPIO controller interface
+│   ├── serial/
+│   │   ├── atmel,sam0-uart.yaml         ← SERCOM USART controller schema (rxpo, txpo, speed)
+│   │   └── uart-controller.yaml         ← Base generic UART interface
+│   ├── led/
+│   │   └── gpio-leds.yaml               ← User LED0 binding (PA15)
+│   └── input/
+│       └── gpio-keys.yaml               ← User Button SW0 binding (PA23)
+│
+└── include/zephyr/dt-bindings/           ← Shared C &amp; Devicetree Preprocessor Headers
+    ├── gpio/
+    │   ├── gpio.h                       ← GPIO_ACTIVE_LOW, GPIO_ACTIVE_HIGH, GPIO_PULL_UP
+    │   └── ...
+    ├── pinctrl/
+    │   └── pic32cm_ls-pinctrl.h         ← Pin multiplexing function constants
+    └── input/
+        └── input-event-codes.h          ← INPUT_KEY_0 / Linux key event codes</pre>
+          </div>
+        </div>
+
+        <!-- 3. Deep-Dive: YAML Bindings (dts/bindings/) -->
+        <div class="concept-card">
+          <h3>📑 3. Deep-Dive: YAML Schemas (<code>dts/bindings/</code>)</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Anatomy of a Devicetree Binding:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><code>description:</code> Documentation string describing the hardware peripheral.</li>
+                <li><code>compatible:</code> Matches the node's <code>compatible = "..."</code> property (e.g. <code>"atmel,sam0-gpio"</code>).</li>
+                <li><code>include:</code> Inherits common property definitions from base schemas like <code>gpio-controller.yaml</code> or <code>uart-controller.yaml</code>.</li>
+                <li><code>properties:</code> Defines allowed properties, data types (<code>int</code>, <code>string</code>, <code>phandle-array</code>), and whether they are <code>required: true</code>.</li>
+                <li><code>#cells specifiers:</code> Defines how many cell integers follow a phandle reference (e.g. <code>#gpio-cells: 2</code> for pin number + flags).</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong>Point A &mdash; GPIO YAML (<code>dts/bindings/gpio/atmel,sam0-gpio.yaml</code>):</strong>
+              <div class="code-box" style="margin: 6px 0;">
+                <pre>compatible: "atmel,sam0-gpio"
+include: [gpio-controller.yaml, base.yaml]
+properties:
+  reg: { required: true }
+  "#gpio-cells": { const: 2 }
+gpio-cells:
+  - pin    # 0 to 31
+  - flags  # Active-low, pull-up, pull-down</pre>
+              </div>
+            </li>
+            <li style="margin-top: 8px;"><strong>Point B &mdash; UART YAML (<code>dts/bindings/serial/atmel,sam0-uart.yaml</code>):</strong>
+              <div class="code-box" style="margin: 6px 0;">
+                <pre>compatible: "atmel,sam0-uart"
+include: [uart-controller.yaml, pinctrl-device.yaml]
+properties:
+  reg: { required: true }
+  interrupts: { required: true }
+  rxpo: { type: int, required: true }
+  txpo: { type: int, required: true }
+  current-speed: { type: int }</pre>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 4. Deep-Dive: DT-Bindings Headers (include/zephyr/dt-bindings/) -->
+        <div class="concept-card">
+          <h3>⚡ 4. Deep-Dive: DT-Bindings Headers (<code>include/zephyr/dt-bindings/</code>)</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Why Dedicated DT-Bindings Headers Exist:</strong>
+              <p style="margin: 4px 0 8px;">
+                Devicetree source files (<code>.dts</code>) are preprocessed with the C Preprocessor (<code>cpp</code>) before passing to the device tree compiler (<code>dtc</code>). Because DTS cannot parse C typedefs, structs, or function prototypes, headers in <code>include/zephyr/dt-bindings/</code> contain <strong>pure preprocessor definitions (<code>#define</code>) and bitmask macros only</strong>.
+              </p>
+            </li>
+            <li><strong>Point A &mdash; <code>zephyr/dt-bindings/gpio/gpio.h</code> Flags:</strong>
+              <div class="code-box" style="margin: 6px 0;">
+                <pre>#define GPIO_ACTIVE_LOW    (1 &lt;&lt; 0)   /* Bit 0: 1 = Active-Low */
+#define GPIO_ACTIVE_HIGH   (0 &lt;&lt; 0)   /* Bit 0: 0 = Active-High */
+#define GPIO_PULL_UP       (1 &lt;&lt; 4)   /* Bit 4: Enable internal pull-up resistor */
+#define GPIO_PULL_DOWN     (1 &lt;&lt; 5)   /* Bit 5: Enable internal pull-down resistor */
+#define GPIO_OPEN_DRAIN    (1 &lt;&lt; 8)   /* Bit 8: Configure pin as Open Drain */</pre>
+              </div>
+            </li>
+            <li><strong>Point B &mdash; Usage in Board DTS:</strong>
+              <p style="margin: 4px 0;">
+                Because of <code>gpio.h</code>, instead of writing opaque numbers like <code>gpios = &lt;&amp;porta 15 17&gt;;</code>, we write clean, human-readable declarations:
+              </p>
+              <div class="code-box" style="margin: 6px 0;">
+                <pre>gpios = &lt;&amp;porta 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)&gt;;</pre>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 5. Build-Time Processing Pipeline -->
+        <div class="concept-card">
+          <h3>⚙️ 5. Build-Time Pipeline: From YAML &amp; DTS to C Headers</h3>
+          <p>How the Zephyr build system transforms Devicetree and Bindings into driver constants:</p>
+          <div class="code-box" style="margin: 10px 0;">
+            <div class="code-box-header"><span>COMPILATION &amp; GENERATION PIPELINE</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8; text-align: center;">Devicetree Source (.dts / .dtsi)  +  Shared Headers (dt-bindings/*.h)
+                         ↓ C Preprocessor (cpp)
+               Preprocessed Devicetree (.dts.pre.tmp)
+                         ↓ Device Tree Compiler (dtc)
+                    Compiled Devicetree (zephyr.dts)
+                         ↓ + YAML Bindings (dts/bindings/)
+               Zephyr Python Generator (gen_defines.py / edtlib)
+                         ↓ Generates Macro Header
+              build/zephyr/include/generated/devicetree_generated.h
+                         ↓ Included by Driver C Code
+              Hardware Drivers (gpio_sam0.c, uart_sam0.c)</pre>
+          </div>
+        </div>
+
+        <!-- 6. What We Used in PIC32CM LS00 Port -->
+        <div class="concept-card">
+          <h3>🛠️ 6. What We Used in the PIC32CM LS00 Port</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>YAML Bindings Utilized:</strong>
+              <ul style="padding-left: 20px;">
+                <li><code>dts/bindings/gpio/atmel,sam0-gpio.yaml</code> &mdash; Validates PORTA (<code>0x40003000</code>) and PORTB (<code>0x40003080</code>).</li>
+                <li><code>dts/bindings/serial/atmel,sam0-uart.yaml</code> &mdash; Validates SERCOM0 virtual COM port at 115200 baud.</li>
+                <li><code>dts/bindings/led/gpio-leds.yaml</code> &mdash; Validates Yellow LED0 on PA15.</li>
+                <li><code>dts/bindings/input/gpio-keys.yaml</code> &mdash; Validates User Button SW0 on PA23.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong>DT-Bindings Headers Included:</strong>
+              <ul style="padding-left: 20px;">
+                <li><code>#include &lt;zephyr/dt-bindings/gpio/gpio.h&gt;</code> &mdash; In <code>pic32cm_ls.dtsi</code> and <code>pic32cm_ls00_cnano.dts</code>.</li>
+                <li><code>#include &lt;zephyr/dt-bindings/input/input-event-codes.h&gt;</code> &mdash; In <code>pic32cm_ls00_cnano.dts</code> for <code>INPUT_KEY_0</code>.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 7. Review / Viva Speaking Script -->
+        <div class="concept-card" style="border: 2px solid #0284c7;">
+          <h3>🗣️ 7. Review / Viva Speaking Script</h3>
+          <div class="speaking-tip-box" style="font-size: 0.95rem; line-height: 1.7;">
+            &ldquo;<em>Zephyr separates Devicetree into three complementary parts: <strong>dts/arm/microchip/</strong> describes what hardware blocks exist on our PIC32CM LS00 silicon; <strong>dts/bindings/</strong> provides the YAML rulebook that validates node properties and types during west build; and <strong>include/zephyr/dt-bindings/</strong> supplies preprocessor flag macros like GPIO_ACTIVE_LOW that are shared seamlessly between Devicetree files and C driver source code.</em>&rdquo;
+          </div>
+        </div>
+
+        <!-- Interactive Bindings & Headers Explorer -->
+        <h2 class="section-heading">Interactive Bindings &amp; dt-bindings Explorer</h2>
+        <div class="ide-container">
+          <div class="ide-sidebar">
+            <div class="sidebar-head"><span>BINDINGS EXPLORER</span></div>
+            <div class="folder-group-title">📁 dts/bindings/gpio</div>
+            <div class="ide-file-item active" onclick="loadBindingsIdeFile('gpio-yaml', this)">📄 atmel,sam0-gpio.yaml</div>
+            <div class="folder-group-title">📁 dts/bindings/serial</div>
+            <div class="ide-file-item" onclick="loadBindingsIdeFile('uart-yaml', this)">📄 atmel,sam0-uart.yaml</div>
+            <div class="folder-group-title">📁 dt-bindings/gpio</div>
+            <div class="ide-file-item" onclick="loadBindingsIdeFile('dt-gpio-h', this)">📄 gpio.h (C/DTS Flags)</div>
+            <div class="folder-group-title">📁 dts/bindings/led</div>
+            <div class="ide-file-item" onclick="loadBindingsIdeFile('leds-yaml', this)">📄 gpio-leds.yaml</div>
+            <div class="folder-group-title">📁 dts/bindings/input</div>
+            <div class="ide-file-item" onclick="loadBindingsIdeFile('keys-yaml', this)">📄 gpio-keys.yaml</div>
+          </div>
+          <div class="ide-editor-pane">
+            <div class="ide-tabs-bar">
+              <div id="bindings-ide-active-tab" class="ide-tab active"><span>atmel,sam0-gpio.yaml</span></div>
+            </div>
+            <div id="bindings-ide-code-content" class="ide-code-view">
+              <pre id="bindings-ide-pre">description: SAM0 GPIO PORT node
+
+compatible: "atmel,sam0-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    required: true
+    const: 2
+
+  "#atmel,pin-cells":
+    type: int
+    required: true
+    const: 2
+    description: Number of items to expect in a atmel,pins specifier
+
+gpio-cells:
+  - pin
+  - flags
+
+atmel,pin-cells:
+  - pin
+  - peripheral</pre>
+            </div>
+            <div id="bindings-ide-explanation" class="ide-explanation-bar">
+              <strong>💡 File Summary:</strong> Devicetree YAML binding for the Port G1 GPIO controller. Specifies mandatory <code>reg</code> address and declares <code>#gpio-cells: 2</code> (Pin Number + Flags like <code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>).
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div style="margin-top: 28px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="nav-tab active" onclick="switchTab('hal-packs-doc')" style="display: inline-flex;">
+            👉 Proceed to HAL / DFP Packs
+          </button>
+          <button class="nav-tab" onclick="switchTab('dts-doc')" style="display: inline-flex;">
+            👉 Review dts/arm/microchip Architecture
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+          <div>&copy; 2026 PIC32CM LS00 Zephyr Porting Initiative.</div>
+          <div>Target: PIC32CM5164LS00048 (EV41C56A)</div>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- TAB 6: HAL / DFP PACKS (MODULES/HAL/MICROCHIP/PACKS LAYER) -->
+    <div id="page-hal-packs-doc" class="page-section">
+      <div class="content-card">
+
+        <h1 class="hero-title">HAL / DFP Packs &mdash; Microchip Register Definitions</h1>
+        <p class="hero-subtitle">
+          Dedicated Architecture Guide: CMSIS Device Family Pack (DFP) in <code>modules/hal/microchip/packs/pic32c/pic32cm_ls/</code>, Register Layout Structs, and CMake Build Integration
+        </p>
+
+        <!-- 1. Purpose of HAL DFP Packs -->
+        <div class="concept-card">
+          <h3>📌 1. Purpose of the <code>modules/hal/microchip/packs/</code> Layer</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>The Silicon C Foundation:</strong> While Devicetree describes <em>where</em> hardware peripherals live in memory, the <strong>HAL DFP (Device Family Pack)</strong> provides the C header definitions, register typedef structures (<code>PortGroup</code>, <code>SercomUsart</code>), bitfield position/mask macros, and CMSIS core interfaces that allow C code to interact with that hardware.</li>
+            <li><strong>Separation from Kernel &amp; Drivers:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong><code>modules/hal/microchip/packs/</code> (DFP Layer):</strong> Official, vendor-supplied register layout headers (from Microchip). Contains zero OS code.</li>
+                <li><strong><code>soc/microchip/pic32c/pic32cm_ls/</code> (SoC Layer):</strong> Zephyr boot sequence (<code>soc.c</code>), early clock tree initialization, and power management.</li>
+                <li><strong><code>drivers/</code> (Driver Layer):</strong> Generic Zephyr drivers (<code>gpio_sam0.c</code>, <code>uart_sam0.c</code>) that cast Devicetree base addresses to DFP register structures.</li>
+              </ul>
+            </li>
+            <li><strong>One-Liner to Memorize:</strong>
+              <div class="quote-box" style="font-size: 0.95rem; margin: 8px 0; font-style: normal;">
+                &ldquo;<strong>The HAL DFP pack provides the official vendor C structs and bitmask macros that turn raw silicon hex addresses into strongly-typed C pointers for Zephyr SoC boot code and drivers.</strong>&rdquo;
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2. The 7 PIC32C Families in modules/hal/microchip/packs/pic32c/ -->
+        <div class="concept-card">
+          <h3>🗂️ 2. The 7 PIC32C Families in <code>modules/hal/microchip/packs/pic32c/</code></h3>
+          <p>The Microchip HAL repository organizes DFP packs by microcontroller family matching the Devicetree tree:</p>
+          <div class="code-box">
+            <div class="code-box-header"><span>TERMINAL (modules/hal/microchip/packs/pic32c/)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">sujan@sujan-Victus:~/zephyrproject/modules/hal/microchip/packs/pic32c$ ls -la
+total 40
+drwxrwxr-x 9 sujan sujan 4096 Aug 12 22:48 .
+drwxrwxr-x 4 sujan sujan 4096 Jul 16 15:52 ..
+-rw-rw-r-- 1 sujan sujan  630 Aug 12 17:51 CMakeLists.txt
+drwxrwxr-x 4 sujan sujan 4096 Jul 16 15:52 pic32ck_sg_gc  ← PIC32CK SG/GC (Arm Cortex-M33)
+drwxrwxr-x 5 sujan sujan 4096 Jul 16 15:52 pic32cm_jh     ← PIC32CM JH (Arm Cortex-M0+)
+drwxrwxr-x 3 sujan sujan 4096 Aug 10 11:32 pic32cm_ls     ← PIC32CM LS (Arm Cortex-M23) [OUR ADDED PACK ⭐]
+drwxrwxr-x 4 sujan sujan 4096 Jul 16 15:52 pic32cm_pl     ← PIC32CM PL (Arm Cortex-M0+)
+drwxrwxr-x 4 sujan sujan 4096 Jul 16 15:52 pic32cm_sg_gc  ← PIC32CM SG/GC (Arm Cortex-M0+)
+drwxrwxr-x 6 sujan sujan 4096 Jul 16 15:52 pic32cx_sg     ← PIC32CX SG (Arm Cortex-M4F)
+drwxrwxr-x 7 sujan sujan 4096 Jul 16 15:52 pic32cz_ca     ← PIC32CZ CA (Arm Cortex-M7)</pre>
+          </div>
+        </div>
+
+        <!-- 3. Internal Directory Structure of pic32cm_ls00/include/ -->
+        <div class="concept-card">
+          <h3>📁 3. Internal Structure of <code>pic32cm_ls/pic32cm_ls00/include/</code></h3>
+          <p>The exact contents of the include directory for our target series:</p>
+          <div class="code-box">
+            <div class="code-box-header"><span>TERMINAL (include/)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">sujan@sujan-Victus:~/zephyrproject/modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/include$ ls -l
+total 88
+drwxrwxr-x 2 sujan sujan  4096 Aug 18 09:36 component             ← 34 peripheral register typedef structs (port.h, sercom.h)
+-rw-r--r-- 1 sujan sujan  1694 Aug 18 09:36 component-version.h   ← DFP component version identifier
+drwxrwxr-x 2 sujan sujan  4096 Aug 18 09:36 instance              ← 42 instance base definitions (port.h, sercom0.h)
+-rw-r--r-- 1 sujan sujan  1755 Aug 18 09:36 pic32c.h              ← Top-level device selector dispatch header
+-rw-rw-r-- 1 sujan sujan 64258 Aug 18 09:36 pic32cm5164ls00048.h   ← Complete chip header (IRQn_Type, NVIC bits, memory)
+drwxrwxr-x 2 sujan sujan  4096 Aug 19 20:41 pio                   ← Pinmux &amp; package pin mapping macros (pic32cm5164ls00048.h)
+-rw-r--r-- 1 sujan sujan  1604 Aug 18 09:36 system_pic32cmls00.h  ← CMSIS SystemInit &amp; SystemCoreClock prototypes</pre>
+          </div>
+        </div>
+
+        <!-- 4. File-by-File Technical Breakdown -->
+        <div class="concept-card">
+          <h3>📑 4. File &amp; Subfolder Technical Breakdown</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong><code>pic32c.h</code> (Top-Level Device Dispatcher):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Acts as the universal entry point included by <code>soc.h</code>.</li>
+                <li>Uses <code>#if defined(__PIC32CM5164LS00048__)</code> to conditionally include <code>pic32cm5164ls00048.h</code>.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong><code>pic32cm5164ls00048.h</code> (64 KB Comprehensive Chip Header):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Declares CPU parameters: <code>__CM23_REV 0x0100U</code>, <code>__NVIC_PRIO_BITS 2U</code>, <code>__VTOR_PRESENT 1U</code>, <code>__MPU_PRESENT 1U</code>.</li>
+                <li>Defines full <code>IRQn_Type</code> enum mapping all 136 NVIC interrupt lines (e.g. <code>SERCOM0_0_IRQn = 65</code>).</li>
+                <li>Includes ARM Cortex-M23 core headers (<code>core_cm23.h</code>) and peripheral component headers.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong><code>component/</code> (34 Peripheral Layout Headers):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong><code>component/port.h</code>:</strong> Defines <code>port_group_registers_t</code> (<code>PORT_DIR</code>, <code>PORT_DIRSET</code>, <code>PORT_OUTTGL</code>, <code>PORT_IN</code>).</li>
+                <li><strong><code>component/sercom.h</code>:</strong> Defines <code>sercom_usart_registers_t</code> (<code>CTRLA</code>, <code>BAUD</code>, <code>INTFLAG</code>, <code>DATA</code>).</li>
+                <li>Other peripherals: <code>oscctrl.h</code> (FDPLL96M), <code>mclk.h</code>, <code>gclk.h</code>, <code>nvmctrl.h</code>, <code>eic.h</code>, <code>tc.h</code>, <code>tcc.h</code>.</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong><code>instance/</code> (42 Peripheral Base Address Mappings):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Defines peripheral instance capabilities and hardware register pointers (e.g. <code>PORT_BITS 93</code>, <code>PORT_GROUPS 3</code>).</li>
+              </ul>
+            </li>
+            <li style="margin-top: 8px;"><strong><code>pio/</code> (Package Pinmux Headers):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li>Contains <code>pio/pic32cm5164ls00048.h</code> defining physical pin constants (<code>PIN_PA15</code> for User LED, <code>PIN_PA23</code> for User Button) and peripheral multiplexer bitmasks (<code>PINMUX_PA15C_SERCOM0_PAD2</code>).</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 5. CMake Build Integration -->
+        <div class="concept-card">
+          <h3>⚙️ 5. CMake Build Integration: How Zephyr Links DFP Packs</h3>
+          <p>How the Zephyr build system brings the HAL pack into the global compiler include path:</p>
+          <div class="code-box" style="margin: 10px 0;">
+            <div class="code-box-header"><span>modules/hal/microchip/packs/pic32c/CMakeLists.txt</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH pic32cm_jh)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_PL pic32cm_pl)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC pic32ck_sg_gc)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC pic32cm_sg_gc)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG pic32cx_sg)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA pic32cz_ca)
+add_subdirectory_ifdef(CONFIG_SOC_SERIES_PIC32CM_LS00 pic32cm_ls/pic32cm_ls00)</pre>
+          </div>
+          <p>Inside <code>pic32cm_ls/pic32cm_ls00/CMakeLists.txt</code>, all subdirectories are added globally:</p>
+          <div class="code-box" style="margin: 10px 0;">
+            <div class="code-box-header"><span>modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/CMakeLists.txt</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">zephyr_include_directories(include)
+zephyr_include_directories(include/pio)
+zephyr_include_directories(include/component)
+zephyr_include_directories(include/instance)</pre>
+          </div>
+        </div>
+
+        <!-- 6. What We Implemented & Ported -->
+        <div class="concept-card">
+          <h3>🛠️ 6. What We Implemented &amp; Ported (Our Work)</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Integrated the Official DFP Pack:</strong> Added the complete <code>pic32cm_ls/</code> HAL tree into <code>modules/hal/microchip/packs/pic32c/</code>.</li>
+            <li><strong>Connected CMake Subsystem:</strong> Added <code>add_subdirectory_ifdef(CONFIG_SOC_SERIES_PIC32CM_LS00 pic32cm_ls/pic32cm_ls00)</code> into the parent <code>CMakeLists.txt</code>.</li>
+            <li><strong>Enabled Seamless Driver Reuse:</strong> Ensured register struct names in <code>component/port.h</code> and <code>component/sercom.h</code> match Zephyr's SAM0 drivers, allowing <code>gpio_sam0.c</code> and <code>uart_sam0.c</code> to compile cleanly without code modifications.</li>
+          </ul>
+        </div>
+
+        <!-- 7. Review / Viva Speaking Script -->
+        <div class="concept-card" style="border: 2px solid #0284c7;">
+          <h3>🗣️ 7. Review / Viva Speaking Script</h3>
+          <div class="speaking-tip-box" style="font-size: 0.95rem; line-height: 1.7;">
+            &ldquo;<em>The HAL DFP pack in <code>modules/hal/microchip/packs/pic32c/pic32cm_ls/</code> contains the official vendor register definitions for our PIC32CM LS00 microcontroller. It defines the CMSIS core settings, the complete 136-line interrupt enum table, and the peripheral structs like <code>port_group_registers_t</code> and <code>sercom_usart_registers_t</code>. Zephyr's CMake includes this pack whenever <code>CONFIG_SOC_SERIES_PIC32CM_LS00</code> is active, allowing both SoC startup code and upstream SAM0 drivers to access hardware registers seamlessly.</em>&rdquo;
+          </div>
+        </div>
+
+        <!-- Interactive HAL Pack Explorer -->
+        <h2 class="section-heading">Interactive HAL / DFP Pack Source Explorer</h2>
+        <div class="ide-container">
+          <div class="ide-sidebar">
+            <div class="sidebar-head"><span>HAL / DFP PACKS</span></div>
+            <div class="folder-group-title">📁 include</div>
+            <div class="ide-file-item active" onclick="loadHalPackIdeFile('pic32c-h', this)">📄 pic32c.h</div>
+            <div class="ide-file-item" onclick="loadHalPackIdeFile('chip-h', this)">📄 pic32cm5164ls00048.h</div>
+            <div class="folder-group-title">📁 component</div>
+            <div class="ide-file-item" onclick="loadHalPackIdeFile('comp-port-h', this)">📄 port.h (PortGroup)</div>
+            <div class="ide-file-item" onclick="loadHalPackIdeFile('comp-sercom-h', this)">📄 sercom.h (SercomUsart)</div>
+            <div class="folder-group-title">📁 build</div>
+            <div class="ide-file-item" onclick="loadHalPackIdeFile('pack-cmakelists', this)">📄 CMakeLists.txt</div>
+          </div>
+          <div class="ide-editor-pane">
+            <div class="ide-tabs-bar">
+              <div id="hal-pack-ide-active-tab" class="ide-tab active"><span>pic32c.h</span></div>
+            </div>
+            <div id="hal-pack-ide-code-content" class="ide-code-view">
+              <pre id="hal-pack-ide-pre">/*
+ * Top level header file for PIC32CM LS00
+ * Copyright (c) 2023-2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _PIC32C_H_
+#define _PIC32C_H_
+
+#if   defined(__PIC32CM1216LS00032__)
+  #include "pic32cm1216ls00032.h"
+#elif defined(__PIC32CM1216LS00048__)
+  #include "pic32cm1216ls00048.h"
+#elif defined(__PIC32CM2532LS00048__)
+  #include "pic32cm2532ls00048.h"
+#elif defined(__PIC32CM2532LS00064__)
+  #include "pic32cm2532ls00064.h"
+#elif defined(__PIC32CM5164LS00048__)
+  #include "pic32cm5164ls00048.h"
+#elif defined(__PIC32CM5164LS00064__)
+  #include "pic32cm5164ls00064.h"
+#elif defined(__PIC32CM5164LS00100__)
+  #include "pic32cm5164ls00100.h"
+#else
+  #error Library does not support the specified device
+#endif
+
+#endif /* _PIC32C_H_ */</pre>
+            </div>
+            <div id="hal-pack-ide-explanation" class="ide-explanation-bar">
+              <strong>💡 File Summary:</strong> Top-level device selector header. Checks compiler preprocessor symbols (like <code>__PIC32CM5164LS00048__</code>) and conditionally includes the target chip header <code>pic32cm5164ls00048.h</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div style="margin-top: 28px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="nav-tab active" onclick="switchTab('drivers-doc')" style="display: inline-flex;">
+            👉 Proceed to Drivers in Zephyr
+          </button>
+          <button class="nav-tab" onclick="switchTab('bindings-doc')" style="display: inline-flex;">
+            👉 Review dts/bindings &amp; dt-bindings
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+          <div>&copy; 2026 PIC32CM LS00 Zephyr Porting Initiative.</div>
+          <div>Target: PIC32CM5164LS00048 (EV41C56A)</div>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- TAB 7: DRIVERS IN ZEPHYR (DRIVER LAYER ONLY - POINT BY POINT) -->
+    <div id="page-drivers-doc" class="page-section">
+      <div class="content-card">
+
+        <h1 class="hero-title">Drivers in Zephyr RTOS &mdash; GPIO &amp; UART Architecture</h1>
+        <p class="hero-subtitle">
+          Point-by-Point Technical Reference: What is a Driver, Purpose in Zephyr, Reference Series (SAM0 &amp; GC00), and Devicetree YAML Bindings
+        </p>
+
+        <!-- 1. What is a Driver in Zephyr? -->
+        <div class="concept-card">
+          <h3>📌 1. What is a Driver in Zephyr?</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Core Definition:</strong> A driver in Zephyr is a software module (written in C) that directly controls microcontroller hardware registers and exposes a standard, uniform programmatic API to the operating system and applications.</li>
+            <li><strong>Hardware Register Abstraction:</strong> Eliminates low-level register manipulation (<code>PORT_REGS</code>, <code>SERCOM_USART_REGS</code>) from application code.</li>
+            <li><strong>Standard Subsystem API Structures:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong>GPIO Driver API (<code>struct gpio_driver_api</code>):</strong> Function pointers for <code>.pin_configure</code>, <code>.port_get_raw</code>, <code>.port_set_masked_raw</code>, <code>.port_set_bits_raw</code>, <code>.port_clear_bits_raw</code>, and <code>.port_toggle_bits</code>.</li>
+                <li><strong>UART Driver API (<code>struct uart_driver_api</code>):</strong> Function pointers for <code>.poll_in</code>, <code>.poll_out</code>, <code>.err_check</code>, and interrupt FIFO operations.</li>
+              </ul>
+            </li>
+            <li><strong>Static Compile-Time Instantiation:</strong> Uses <code>DEVICE_DT_INST_DEFINE()</code> to create <code>const struct device</code> instances in Flash ROM at build time (zero heap usage / no <code>malloc</code>).</li>
+            <li><strong>One-Liner to Memorize:</strong>
+              <div class="quote-box" style="font-size: 0.95rem; margin: 8px 0; font-style: normal;">
+                &ldquo;<strong>Application code never touches hardware registers; it calls the generic Zephyr driver API, and the driver translates that call into microcontroller-specific register operations.</strong>&rdquo;
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2. What is the Purpose of This in Zephyr? -->
+        <div class="concept-card">
+          <h3>🎯 2. What is the Purpose of Drivers in Zephyr?</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Point 1 &mdash; Cross-Platform Portability:</strong> Application code (such as <code>samples/basic/blinky</code> and <code>samples/hello_world</code>) is 100% hardware-agnostic; the same C source runs unmodified on STM32, Nordic nRF, ESP32, and PIC32CM.</li>
+            <li><strong>Point 2 &mdash; Decoupled Architecture Flow:</strong>
+              <div class="code-box" style="margin: 10px 0;">
+                <div class="code-box-header"><span>DRIVER DATA FLOW</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                <pre style="color: #38bdf8; text-align: center;">Application Code (e.g., samples/basic/blinky)
+   ↓ Calls: gpio_pin_toggle_dt(&amp;led0)
+Zephyr Subsystem API (zephyr/drivers/gpio.h)
+   ↓ Invokes function pointer via struct gpio_driver_api
+Hardware Device Driver (drivers/gpio/gpio_sam0.c)
+   ↓ Writes bitmask to register
+Physical Silicon Registers (PORTA.OUTTGL @ 0x4000301C)
+   ↓ Toggles Yellow LED0 on Pin PA15</pre>
+              </div>
+            </li>
+            <li><strong>Point 3 &mdash; Compile-Time Hardware Safety:</strong> Validates peripheral base addresses, IRQ lines, and pin assignments at build time via Devicetree YAML schemas before code ever flashes to the MCU.</li>
+            <li><strong>Point 4 &mdash; Deterministic Initialization Ordering:</strong> Priority levels (e.g. <code>POST_KERNEL</code> with <code>CONFIG_GPIO_INIT_PRIORITY</code>) guarantee system clocks (<code>FDPLL96M 48MHz</code>) and power domains are stabilized before peripherals initialize.</li>
+          </ul>
+        </div>
+
+        <!-- 3. Which Series We Referred To -->
+        <div class="concept-card">
+          <h3>🔍 3. Which Series We Referred to for Creating / Reusing the Drivers</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Reference 1 &mdash; Microchip SAM L10 / SAM L11 (SAM0 Series):</strong>
+              <ul style="padding-left: 20px;">
+                <li>Shares the exact same <strong>Arm® Cortex®-M23</strong> core with ARMv8-M TrustZone.</li>
+                <li>Shares the identical <strong>Port G1 GPIO</strong> controller and <strong>SERCOM</strong> peripheral register layouts.</li>
+              </ul>
+            </li>
+            <li><strong>Reference 2 &mdash; Microchip PIC32CM GC00 / SG00 Series:</strong>
+              <ul style="padding-left: 20px;">
+                <li>Direct sister family in Zephyr sharing the identical <strong>Port G1 GPIO</strong> controller (<code>PORT_REGS</code>) and <strong>SERCOM USART</strong> bus architecture.</li>
+              </ul>
+            </li>
+            <li><strong>Reused Driver Files in Zephyr Tree:</strong>
+              <ul style="padding-left: 20px;">
+                <li><code>drivers/gpio/gpio_sam0.c</code> &mdash; Microchip Port G1 GPIO Driver.</li>
+                <li><code>drivers/serial/uart_sam0.c</code> &mdash; Microchip SERCOM USART Driver.</li>
+                <li><code>drivers/flash/flash_sam0.c</code> &mdash; Microchip NVMCTRL Flash Driver.</li>
+              </ul>
+            </li>
+            <li><strong>Why Driver Reuse Was Possible:</strong>
+              <ul style="padding-left: 20px;">
+                <li>Microchip standardizes its Port G1 and SERCOM IP across both SAM0 and PIC32CM microcontrollers.</li>
+                <li>By declaring matching Devicetree compatible strings (<code>"atmel,sam0-gpio"</code>, <code>"atmel,sam0-uart"</code>), we leveraged upstream-tested driver logic without writing new driver C code from scratch.</li>
+              </ul>
+            </li>
+            <li><strong>What to Say in Viva / Technical Reviews:</strong>
+              <div class="speaking-tip-box" style="margin: 8px 0;">
+                &ldquo;<em>We did not need to write new GPIO and UART driver C code from scratch because Microchip standardized its Port G1 and SERCOM IP across SAM L10/L11 and PIC32CM. We reused Zephyr's upstream-tested <code>gpio_sam0.c</code> and <code>uart_sam0.c</code>, binding them to our SoC's memory addresses and IRQ lines via Devicetree.</em>&rdquo;
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 4. YAML Bindings (GPIO, UART, and Used Ones) -->
+        <div class="concept-card">
+          <h3>📑 4. Devicetree YAML Bindings (GPIO YAML, UART YAML &amp; Used Bindings)</h3>
+          <ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Role of Devicetree YAML Bindings:</strong> Defines the formal schema that validates node properties, data types, and cell counts during build time.</li>
+            
+            <li style="margin-top: 10px;"><strong>Point A &mdash; GPIO YAML Binding (<code>dts/bindings/gpio/atmel,sam0-gpio.yaml</code>):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong>Compatible:</strong> <code>"atmel,sam0-gpio"</code> / <code>"microchip,port-g1-gpio"</code>.</li>
+                <li><strong>Node Property:</strong> <code>gpio-controller;</code></li>
+                <li><strong>Specifier Cells:</strong> <code>#gpio-cells: 2</code> (Cell 0: pin number 0 to 31, Cell 1: flags like <code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>).</li>
+                <li><strong>Target Nodes Mapped:</strong> <code>&amp;porta</code> (<code>0x40003000</code>) and <code>&amp;portb</code> (<code>0x40003080</code>).</li>
+              </ul>
+              <div class="code-box" style="margin: 8px 0;">
+                <div class="code-box-header"><span>dts/bindings/gpio/atmel,sam0-gpio.yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                <pre>description: SAM0 GPIO PORT node
+compatible: "atmel,sam0-gpio"
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin       # Pin index (0 to 31)
+  - flags     # Active-low, pull-up, pull-down, open-drain</pre>
+              </div>
+            </li>
+
+            <li style="margin-top: 10px;"><strong>Point B &mdash; UART (SERCOM) YAML Binding (<code>dts/bindings/serial/atmel,sam0-uart.yaml</code>):</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><strong>Compatible:</strong> <code>"atmel,sam0-uart"</code> / <code>"microchip,sercom-uart"</code>.</li>
+                <li><strong>Register Base:</strong> <code>reg = &lt;0x42000000 0x40&gt;;</code>.</li>
+                <li><strong>Interrupt Lines:</strong> <code>interrupts = &lt;65 0&gt;, &lt;66 0&gt;, &lt;67 0&gt;, &lt;68 0&gt;;</code> (RX, TX, ERROR, DRE).</li>
+                <li><strong>Baud Rate:</strong> <code>current-speed = &lt;115200&gt;;</code>.</li>
+                <li><strong>Pin Multiplexing:</strong> <code>rxpo</code> (PAD[0] to PAD[3]), <code>txpo</code> (PAD[0] or PAD[2] with RTS/CTS).</li>
+                <li><strong>Target Node Mapped:</strong> <code>&amp;sercom0</code> for on-board nEDBG Virtual COM port.</li>
+              </ul>
+              <div class="code-box" style="margin: 8px 0;">
+                <div class="code-box-header"><span>dts/bindings/serial/atmel,sam0-uart.yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                <pre>description: Atmel SAM0 SERCOM UART driver
+compatible: "atmel,sam0-uart"
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  rxpo:
+    type: int
+    required: true
+    description: Receive Data Pinout (PAD[0] to PAD[3])
+
+  txpo:
+    type: int
+    required: true
+    description: Transmit Data Pinout (PAD[0] or PAD[2] with RTS/CTS)
+
+  current-speed:
+    type: int
+    description: Initial baud rate setting (e.g. 115200)</pre>
+              </div>
+            </li>
+
+            <li style="margin-top: 10px;"><strong>Point C &mdash; Other Used Driver YAML Bindings:</strong>
+              <ul style="padding-left: 20px; margin-top: 4px;">
+                <li><code>dts/bindings/led/gpio-leds.yaml</code> &mdash; Binds Yellow User LED0 (PA15, Active-Low) to GPIO subsystem.</li>
+                <li><code>dts/bindings/input/gpio-keys.yaml</code> &mdash; Binds User Push Button SW0 (PA23, Active-Low with internal pull-up) to GPIO input/interrupts.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Interactive Driver Explorer -->
+        <h2 class="section-heading">Interactive Driver &amp; YAML Binding Explorer</h2>
+        <div class="ide-container">
+          <div class="ide-sidebar">
+            <div class="sidebar-head"><span>DRIVER EXPLORER</span></div>
+            <div class="folder-group-title">📁 drivers/gpio</div>
+            <div class="ide-file-item active" onclick="loadDriverIdeFile('gpio-c', this)">📄 gpio_sam0.c</div>
+            <div class="folder-group-title">📁 dts/bindings/gpio</div>
+            <div class="ide-file-item" onclick="loadDriverIdeFile('gpio-yaml', this)">📄 atmel,sam0-gpio.yaml</div>
+            <div class="folder-group-title">📁 drivers/serial</div>
+            <div class="ide-file-item" onclick="loadDriverIdeFile('uart-c', this)">📄 uart_sam0.c</div>
+            <div class="folder-group-title">📁 dts/bindings/serial</div>
+            <div class="ide-file-item" onclick="loadDriverIdeFile('uart-yaml', this)">📄 atmel,sam0-uart.yaml</div>
+            <div class="folder-group-title">📁 dts/bindings/led</div>
+            <div class="ide-file-item" onclick="loadDriverIdeFile('leds-yaml', this)">📄 gpio-leds.yaml</div>
+          </div>
+          <div class="ide-editor-pane">
+            <div class="ide-tabs-bar">
+              <div id="driver-ide-active-tab" class="ide-tab active"><span>gpio_sam0.c</span></div>
+            </div>
+            <div id="driver-ide-code-content" class="ide-code-view">
+              <pre id="driver-ide-pre">/*
+ * Copyright (c) 2019 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT atmel_sam0_gpio
+
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
+#include <soc.h>
+
+struct gpio_sam0_config {
+	struct gpio_driver_config common;
+	PortGroup *regs;
+};
+
+struct gpio_sam0_data {
+	struct gpio_driver_data common;
+	sys_slist_t callbacks;
+};
+
+static int gpio_sam0_pin_configure(const struct device *port,
+				   gpio_pin_t pin,
+				   gpio_flags_t flags)
+{
+	const struct gpio_sam0_config *config = port->config;
+	PortGroup *regs = config->regs;
+
+	if ((flags & GPIO_OUTPUT) != 0) {
+		regs->DIRSET.reg = BIT(pin);
+	} else {
+		regs->DIRCLR.reg = BIT(pin);
+	}
+	return 0;
+}
+
+static const struct gpio_driver_api gpio_sam0_api = {
+	.pin_configure = gpio_sam0_pin_configure,
+	.port_get_raw = gpio_sam0_port_get_raw,
+	.port_set_masked_raw = gpio_sam0_port_set_masked_raw,
+	.port_set_bits_raw = gpio_sam0_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_sam0_port_clear_bits_raw,
+	.port_toggle_bits = gpio_sam0_port_toggle_bits,
+};
+
+#define GPIO_SAM0_INIT(n)                                                      \
+	static const struct gpio_sam0_config gpio_sam0_config_##n = {               \
+		.common = {                                                                \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                   \
+		},                                                                         \
+		.regs = (PortGroup *)DT_INST_REG_ADDR(n),                                 \
+	};                                                                           \
+	static struct gpio_sam0_data gpio_sam0_data_##n;                             \
+	DEVICE_DT_INST_DEFINE(n, gpio_sam0_init, NULL, &gpio_sam0_data_##n,         \
+			      &gpio_sam0_config_##n, PRE_KERNEL_1,                           \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_SAM0_INIT)</pre>
+            </div>
+            <div id="driver-ide-explanation" class="ide-explanation-bar">
+              <strong>💡 File Summary:</strong> Implements the generic <code>gpio_driver_api</code> on top of Microchip's Port G1 hardware registers (<code>DIRSET</code>, <code>DIRCLR</code>, <code>OUTSET</code>, <code>OUTCLR</code>, <code>IN</code>). Statically bound at compile time using <code>DEVICE_DT_INST_DEFINE()</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div style="margin-top: 28px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="nav-tab active" onclick="switchTab('boards-layer')" style="display: inline-flex;">
+            👉 Proceed to Boards Layer Explanation
+          </button>
+          <button class="nav-tab" onclick="switchTab('dts-doc')" style="display: inline-flex;">
+            👉 Review Devicetree (DTS) Architecture
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+          <div>&copy; 2026 PIC32CM LS00 Zephyr Porting Initiative.</div>
+          <div>Target: PIC32CM5164LS00048 (EV41C56A)</div>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- TAB 6: DEDICATED BOARDS LAYER EXPLANATION -->
+    <div id="page-boards-layer" class="page-section">
+      <div class="content-card">
+
+        <h1 class="hero-title">Board Layer Architecture &amp; Implementation</h1>
+        <p class="hero-subtitle">
+          How Zephyr Describes Specific Physical PCBs, Board Directory Structures, File Roles, Kconfig Defaults, and Board Revisions
+        </p>
+
+        <!-- 1. Purpose of this section -->
+        <div class="concept-card">
+          <h3>📌 1. Purpose of the Board Layer</h3>
+          <p>
+            This section explains the <strong>board layer</strong> &mdash; the files that describe this specific physical board (pin wiring, enabled peripherals, default configuration), sitting above the SoC layer and below the application.
+          </p>
+          <div class="quote-box" style="font-size: 1.05rem; margin: 12px 0; font-style: normal; line-height: 1.7;">
+            &ldquo;<strong>The SoC layer says what the chip <em>can</em> do. The board layer says what's <em>actually wired and used</em> on this exact PCB.</strong>&rdquo;
+          </div>
+        </div>
+
+        <!-- 2. Full board folder structure -->
+        <div class="concept-card">
+          <h3>📁 2. Full Board Folder Structure</h3>
+          <div class="code-box">
+            <div class="code-box-header">
+              <span>BOARD REPOSITORY HIERARCHY</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <pre style="color: #38bdf8;">boards/microchip/pic32c/pic32cm_ls00_cnano/
+├── board.cmake                     ← Configures debug/flash runner (PyOCD, OpenOCD, EDBG)
+├── board.yml                       ← Modern Zephyr v2 board metadata (name, vendor, SoC)
+├── Kconfig.pic32cm_ls00_cnano      ← Selectable board option symbol, gates SoC dependency
+├── Kconfig.defconfig               ← Board-specific default Kconfig values (console UART, clocks)
+├── pic32cm_ls00_cnano_defconfig    ← Baseline .config options applied to every build
+├── pic32cm_ls00_cnano.dts          ← Target hardware Devicetree (enabled nodes, pinctrl, aliases)
+├── pic32cm_ls00_cnano.yaml         ← Twister test runner metadata (testing capability flags)
+├── pinctrl.dtsi                    ← (or inline pinctrl nodes) maps signals to physical pins
+├── doc/
+│   ├── index.rst                   ← Official Sphinx documentation shown on Zephyr docs site
+│   └── pic32cm_ls00_cnano.png      ← High-resolution board picture
+└── support/                        ← Optional: OpenOCD / J-Link / PyOCD scripts</pre>
+          </div>
+        </div>
+
+        <!-- 3. File-by-file explanation -->
+        <div class="concept-card">
+          <h3>📑 3. File-by-File Technical Breakdown</h3>
+          <div class="table-responsive">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th style="width: 22%;">File</th>
+                  <th style="width: 38%;">Purpose</th>
+                  <th style="width: 40%;">What to Say About It in Review / Viva</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong><code>board.cmake</code></strong></td>
+                  <td>Tells Zephyr's build system which debug/flash runner to use (OpenOCD, PyOCD, EDBG, J-Link) and any runner-specific arguments.</td>
+                  <td>&ldquo;<em>This wires up <code>west flash</code> / <code>west debug</code> to the correct programmer for this board &mdash; for Curiosity Nano that's the on-board embedded debugger via CMSIS-DAP/EDBG.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>board.yml</code></strong></td>
+                  <td>Board metadata under modern Zephyr: board name, vendor, SoC part number it uses, and supported architectures.</td>
+                  <td>&ldquo;<em>This is how <code>west build -b &lt;board&gt;</code> resolves which SoC and vendor tree to pull into the build.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>Kconfig.board</code> / <code>Kconfig.&lt;board&gt;</code></strong></td>
+                  <td>Declares the board as a selectable option, gated by which SoC it depends on.</td>
+                  <td>&ldquo;<em>This makes the board only buildable when its required SoC/CPU config is selected &mdash; preventing mismatched board/SoC combinations.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>Kconfig.defconfig</code></strong></td>
+                  <td>Board-specific <em>default</em> Kconfig values &mdash; console UART, default GPIO, LED/button aliases enabled by default.</td>
+                  <td>&ldquo;<em>These are defaults specific to this board's wiring &mdash; e.g., which SERCOM is the console UART because that's the one connected to the debugger's virtual COM port.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>&lt;board&gt;_defconfig</code></strong></td>
+                  <td>The actual baseline <code>.config</code> fragment applied to every build for this board.</td>
+                  <td>&ldquo;<em>This is the concrete list of Kconfig symbols turned on by default &mdash; e.g., <code>CONFIG_BUILD_OUTPUT_HEX=y</code>, <code>CONFIG_SERIAL=y</code> &mdash; tuned for what this board needs out of the box.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>&lt;board&gt;.dts</code></strong></td>
+                  <td>The physical hardware description &mdash; includes the SoC <code>.dtsi</code>, enables specific peripheral nodes, and adds pinctrl bindings.</td>
+                  <td>&ldquo;<em>This is where the SoC's disabled peripheral nodes get flipped to <code>status = "okay"</code> for whatever is physically wired on this PCB.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>&lt;board&gt;.yaml</code></strong></td>
+                  <td>Twister (Zephyr's automated test runner) metadata &mdash; supported features, RAM/flash size, testing capability flags.</td>
+                  <td>&ldquo;<em>This tells Zephyr's CI/test framework what this board supports, so automated tests know which sample apps are valid to run on it.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>pinctrl.dtsi</code> / pinctrl nodes</strong></td>
+                  <td>Maps peripheral signals to actual physical pins for this board.</td>
+                  <td>&ldquo;<em>The SoC <code>pinctrl_soc.h</code> lists possible mux options; this file picks the specific one this board's PCB traces actually route.</em>&rdquo;</td>
+                </tr>
+                <tr>
+                  <td><strong><code>doc/index.rst</code></strong></td>
+                  <td>Human-readable board documentation shown in Zephyr's official documentation website.</td>
+                  <td>&ldquo;<em>Comprehensive documentation covering board overview, pinout tables, flashing and debugging steps. It doesn't affect the compiled binary.</em>&rdquo;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Board-level Kconfig defaults -->
+        <div class="concept-card">
+          <h3>🔍 4. Board-Level Kconfig Defaults &mdash; Deep Dive</h3>
+          <p>
+            Understanding the <em>reasoning chain</em> behind <code>Kconfig.defconfig</code> is a key topic in technical evaluations:
+          </p>
+          <div class="quote-box" style="font-size: 1.02rem; font-style: normal; line-height: 1.7;">
+            &ldquo;<strong><code>Kconfig.defconfig</code> on the board level is where I set things that are true only because of <em>this board's</em> wiring &mdash; not the chip's capability. For example, choosing SERCOM0 as the debug console isn't a chip fact, it's a board fact &mdash; SERCOM0 happens to be the one physically routed to the on-board USB-to-UART bridge on this specific board.</strong>&rdquo;
+          </div>
+        </div>
+
+        <!-- 5. Board Revisions -->
+        <div class="concept-card">
+          <h3>🔄 5. Board Revisions &amp; Hardware Overlays</h3>
+          <p>
+            When a development board or production PCB undergoes hardware revision updates (e.g. Rev A &rarr; Rev B moving a trace to a different GPIO pin), Zephyr supports revision-specific overlay files:
+          </p>
+          <div class="code-box">
+            <div class="code-box-header"><span>OVERLAY PATTERN</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre style="color: #38bdf8;">boards/microchip/pic32c/pic32cm_ls00_cnano/pic32cm_ls00_cnano_rev_b.overlay</pre>
+          </div>
+          <div class="speaking-tip-box">
+            <strong>🗣️ One-Liner to Speak:</strong><br/>
+            &ldquo;<em>Zephyr supports board revisions via overlay files, so hardware changes (such as rev B moving an LED pin) don't require rewriting or duplicating a whole new board definition.</em>&rdquo;
+          </div>
+        </div>
+
+        <!-- 6. Flashing/debugging path -->
+        <div class="concept-card">
+          <h3>⚡ 6. Flashing &amp; Debugging Path (<code>board.cmake</code>)</h3>
+          <p>
+            How <code>board.cmake</code> ties back to real developer usage:
+          </p>
+          <div class="quote-box" style="font-size: 1.02rem; font-style: normal; line-height: 1.7;">
+            &ldquo;<strong>When I run <code>west flash</code>, <code>board.cmake</code> tells Zephyr's build system to use PyOCD or OpenOCD targeting the on-board nEDBG debugger &mdash; that is what allows <code>west flash</code> and <code>west debug</code> to work out-of-the-box without requiring me to pass manual debugger flags.</strong>&rdquo;
+          </div>
+        </div>
+
+        <!-- 7. What you actually changed -->
+        <div class="concept-card">
+          <h3>🛠️ 7. What We Actually Changed &amp; Implemented (Our Work)</h3>
+          <ul style="padding-left: 20px; font-size: 0.88rem; line-height: 1.6;">
+            <li><strong>Enabled Peripherals in Board DTS:</strong> Flipped <code>&amp;porta</code>, <code>&amp;portb</code>, and <code>&amp;systick</code> from <code>disabled</code> to <code>status = "okay"</code> in <code>pic32cm_ls00_cnano.dts</code>.</li>
+            <li><strong>Bound Board Aliases:</strong> Mapped <code>led0</code> to PA15 (Yellow User LED, Active-Low) and <code>sw0</code> to PA23 (Push Button, Active-Low with pull-up).</li>
+            <li><strong>Configured Console UART:</strong> Routed SERCOM0 to PA22 (TX) and PA23 (RX) for the Virtual COM port on the nEDBG debugger.</li>
+            <li><strong>Configured Runner Arguments:</strong> Added PyOCD and OpenOCD runner definitions inside <code>board.cmake</code> for seamless flashing.</li>
+            <li><strong>Added Twister &amp; YAML Metadata:</strong> Created <code>board.yml</code> to register the board under modern Zephyr Schema v2.</li>
+          </ul>
+        </div>
+
+        <!-- 8. Bring-up framing line -->
+        <div class="concept-card">
+          <h3>🩺 8. Bring-Up Diagnostic Experience</h3>
+          <div class="speaking-tip-box" style="font-size: 0.95rem; line-height: 1.7;">
+            <strong>🗣️ How to Describe Board Bring-Up in Reviews:</strong><br/>
+            &ldquo;<em>Most board-level bring-up issues showed up as a peripheral working electrically but not functionally &mdash; usually a pinctrl mismatch between what I wired in <code>.dts</code> and what was physically connected &mdash; rather than SoC-level clock problems, which is what told me to look at the board layer specifically.</em>&rdquo;
+          </div>
+        </div>
+
+        <!-- 9. Closing bridge line -->
+        <div class="concept-card" style="border: 2px solid #0284c7;">
+          <h3>🌉 9. The Complete Architectural Story (SoC + DTS + Drivers + Boards)</h3>
+          <div class="quote-box" style="font-size: 1.05rem; font-style: normal; line-height: 1.7;">
+            &ldquo;<strong>The SoC layer defines chip capability, Devicetree describes hardware topology using that capability, drivers implement standardized APIs on top of that topology, and the board layer configures what is actually connected on this specific PCB &mdash; four layers, four separate concerns, so the same SoC and driver code can be reused across many different boards.</strong>&rdquo;
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div style="margin-top: 28px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="nav-tab active" onclick="switchTab('board-doc')" style="display: inline-flex;">
+            👉 Proceed to Hardware Specifications &amp; Flashing Guide
+          </button>
+          <button class="nav-tab" onclick="switchTab('drivers-doc')" style="display: inline-flex;">
+            👉 Review Drivers in Zephyr
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+          <div>&copy; 2026 PIC32CM LS00 Zephyr Porting Initiative.</div>
+          <div>Target: PIC32CM5164LS00048 (EV41C56A)</div>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- TAB 7: HARDWARE SPECIFICATIONS & PROGRAMMING GUIDE -->
     <div id="page-board-doc" class="page-section">
       <div class="content-card">
 
@@ -3081,9 +4203,13 @@ sudo cp edbg /usr/local/bin/</pre>
 
   </div>
 
-  <!-- Interactive JavaScript for 5 Tabs -->
+  <!-- Interactive JavaScript for 9 Tabs & File Viewers -->
   <script>
-    const socFileDb = {"soc-yml": {"title": "soc.yml", "code": "family:\n- name: microchip_pic32cm_ls\n  series:\n  - name: pic32cm_ls00\n    socs:\n    - name: pic32cm5164ls00048", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Registers the <code>microchip_pic32cm_ls</code> family, the <code>pic32cm_ls00</code> series, and the target SoC <code>pic32cm5164ls00048</code> into Zephyr's hardware metadata system."}, "root-cmakelists": {"title": "CMakeLists.txt (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nadd_subdirectory(common)\nadd_subdirectory(${SOC_SERIES})", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Includes the shared <code>common/</code> directory and dynamically adds the specific SoC series directory (<code>pic32cm_ls00</code>) during the build."}, "root-kconfig": {"title": "Kconfig (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\tbool\n\nconfig SOC_FAMILY\n\tdefault \"microchip_pic32cm_ls\" if SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nrsource \"*/Kconfig.soc\"", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Declares the <code>SOC_FAMILY_MICROCHIP_PIC32CM_LS</code> symbol and recursively sources series-specific Kconfigs."}, "root-kconfig-defconfig": {"title": "Kconfig.defconfig (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nif SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nconfig CPU_CORTEX_M23\n\tdefault y\n\nconfig ARM_MPU\n\tdefault y\n\nconfig CORTEX_M_SYSTICK\n\tdefault y\n\nconfig NUM_IRQS\n\tdefault 136\n\nendif # SOC_FAMILY_MICROCHIP_PIC32CM_LS", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Sets hardware defaults for the Cortex-M23 core, ARM MPU, SysTick timer, and specifies 136 interrupt lines in the NVIC."}, "root-kconfig-soc": {"title": "Kconfig.soc (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\tbool\n\nconfig SOC_FAMILY\n\tdefault \"microchip_pic32cm_ls\" if SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nrsource \"*/Kconfig.soc\"", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Family-level Kconfig entry point defining the string name for the PIC32CM LS series."}, "common-cmakelists": {"title": "common/CMakeLists.txt", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nzephyr_sources(soc.c)\nzephyr_include_directories(.)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Adds the low-level <code>soc.c</code> boot file to the Zephyr build and includes the local header directory."}, "common-pinctrl": {"title": "common/pinctrl_soc.h", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_\n#define ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_\n\n#include <zephyr/types.h>\n\n#define MCHP_PORT_PINMUX(port, pin, func) \\\n\t(((port) << 16) | ((pin) << 8) | (func))\n\n#endif /* ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Defines the pin multiplexing macros for the Microchip Port G1 peripheral system."}, "common-soc": {"title": "common/soc.c (FDPLL96M 48MHz & ECC Zero-Init)", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <zephyr/devicetree.h>\n#include <soc.h>\n\n#define SRAM0_NODE DT_CHOSEN(zephyr_sram)\n#define SRAM0_BASE DT_REG_ADDR(SRAM0_NODE)\n#define SRAM0_SIZE DT_REG_SIZE(SRAM0_NODE)\n#define TIMEOUT_CYCLES 10000U\n\nvoid pic32cm_ls_clock_init(void)\n{\n\t/* 1. Flash 2 wait states for 48 MHz operation at PL2 */\n\tNVMCTRL_REGS->NVMCTRL_CTRLB = (NVMCTRL_REGS->NVMCTRL_CTRLB & ~NVMCTRL_CTRLB_RWS_Msk) | NVMCTRL_CTRLB_RWS(2);\n\n\t/* 2. Switch PM to Performance Level 2 (PL2) */\n\tPM_REGS->PM_PLCFG = PM_PLCFG_PLSEL_PL2;\n\n\t/* 3. Configure OSC16M at 16 MHz */\n\tOSCCTRL_REGS->OSCCTRL_OSC16MCTRL = OSCCTRL_OSC16MCTRL_FSEL_16MHZ | OSCCTRL_OSC16MCTRL_ENABLE(1);\n\n\t/* 4. GCLK1 divides 16 MHz by 16 => 1.0 MHz reference */\n\tGCLK_REGS->GCLK_GENCTRL[1] = GCLK_GENCTRL_SRC_OSC16M | GCLK_GENCTRL_DIV(16) | GCLK_GENCTRL_GENEN(1);\n\n\t/* 5. Connect GCLK1 to FDPLL channel 0 */\n\tGCLK_REGS->GCLK_PCHCTRL[OSCCTRL_GCLK_ID_FDPLL] = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN(1);\n\n\t/* 6. Configure FDPLL Multiplier: 1.0 MHz * 48 = 48.0 MHz */\n\tOSCCTRL_REGS->OSCCTRL_DPLLRATIO = OSCCTRL_DPLLRATIO_LDR(47);\n\tOSCCTRL_REGS->OSCCTRL_DPLLCTRLA = OSCCTRL_DPLLCTRLA_ENABLE(1);\n\n\t/* 7. Switch main GCLK0 to FDPLL96M (48 MHz) */\n\tGCLK_REGS->GCLK_GENCTRL[0] = GCLK_GENCTRL_SRC_FDPLL96M | GCLK_GENCTRL_GENEN(1);\n}\n\nvoid __attribute__((naked)) soc_reset_hook(void)\n{\n\t__asm__ volatile(\n\t\t\"ldr r0, =%0\\n\"\n\t\t\"ldr r1, =%1\\n\"\n\t\t\"movs r2, #0\\n\"\n\t\t\"1:\\n\"\n\t\t\"stm r0!, {r2}\\n\"\n\t\t\"cmp r0, r1\\n\"\n\t\t\"bne 1b\\n\"\n\t\t\"push {r4, lr}\\n\"\n\t\t\"bl pic32cm_ls_clock_init\\n\"\n\t\t\"pop {r4, pc}\\n\"\n\t\t:\n\t\t: \"i\"(SRAM0_BASE), \"i\"(SRAM0_BASE + SRAM0_SIZE)\n\t\t: \"r0\", \"r1\", \"r2\", \"memory\"\n\t);\n}", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Implements <code>pic32cm_ls_clock_init()</code> (48 MHz FDPLL96M oscillator switch at PL2) and <code>soc_reset_hook()</code> (Thumb assembly SRAM zero-init loop to avoid false ECC parity traps)."}, "ls00-kconfig-soc": {"title": "pic32cm_ls00/Kconfig.soc", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_SERIES_PIC32CM_LS00\n\tbool\n\tselect SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\thelp\n\t  Enable support for Microchip PIC32CM LS00 Cortex-M23 microcontrollers.\n\nconfig SOC_SERIES\n\tdefault \"pic32cm_ls00\" if SOC_SERIES_PIC32CM_LS00\n\nconfig SOC_PIC32CM5164LS00048\n\tbool\n\tselect SOC_SERIES_PIC32CM_LS00\n\nconfig SOC\n\tdefault \"pic32cm5164ls00048\" if SOC_PIC32CM5164LS00048", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Declares <code>SOC_SERIES_PIC32CM_LS00</code> and the target chip symbol <code>SOC_PIC32CM5164LS00048</code>."}, "ls00-dtsi": {"title": "pic32cm_ls00/pic32cm5164ls00048.dtsi", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <arm/armv8-m.dtsi>\n\n/ {\n\tcpus {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <0>;\n\n\t\tcpu0: cpu@0 {\n\t\t\tdevice_type = \"cpu\";\n\t\t\tcompatible = \"arm,cortex-m23\";\n\t\t\treg = <0>;\n\t\t\t#address-cells = <1>;\n\t\t\t#size-cells = <1>;\n\t\t\tclocks = <&mclk 0>;\n\t\t};\n\t};\n\n\tsram0: memory@20000000 {\n\t\tcompatible = \"mmio-sram\";\n\t\treg = <0x20000000 0x10000>; /* 64KB SRAM */\n\t};\n\n\tflash0: flash@0 {\n\t\tcompatible = \"soc-nv-flash\";\n\t\treg = <0x0 0x80000>; /* 512KB Flash */\n\t};\n\n\tsoc {\n\t\tnvmctrl: nvmctrl@41004000 {\n\t\t\tcompatible = \"microchip,pic32cm-ls-nvmctrl\", \"atmel,sam0-nvmctrl\";\n\t\t\treg = <0x41004000 0x400>;\n\t\t\tinterrupts = <28 0>;\n\t\t};\n\n\t\tclock: clock@40000800 {\n\t\t\tcompatible = \"microchip,pic32cm-ls-clock\";\n\t\t\treg = <0x40000800 0x400>;\n\t\t};\n\n\t\tporta: gpio@40003000 {\n\t\t\tcompatible = \"atmel,sam0-gpio\";\n\t\t\treg = <0x40003000 0x80>;\n\t\t\tgpio-controller;\n\t\t\t#gpio-cells = <2>;\n\t\t};\n\n\t\tportb: gpio@40003080 {\n\t\t\tcompatible = \"atmel,sam0-gpio\";\n\t\t\treg = <0x40003080 0x80>;\n\t\t\tgpio-controller;\n\t\t\t#gpio-cells = <2>;\n\t\t};\n\t};\n};", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Hardware Devicetree for <code>pic32cm5164ls00048</code> defining Cortex-M23, 64KB SRAM, 512KB Flash, NVMCTRL, Clock, and PORTA/PORTB."}, "ls00-soc-c": {"title": "pic32cm_ls00/soc.c", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <zephyr/kernel.h>\n#include <zephyr/init.h>\n#include <soc.h>\n\nstatic int pic32cm_ls00_init(void)\n{\n\treturn 0;\n}\n\nSYS_INIT(pic32cm_ls00_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Standard Zephyr <code>PRE_KERNEL_1</code> initialization hook for the PIC32CM LS00 family."}, "ls00-soc-h": {"title": "pic32cm_ls00/soc.h", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_\n#define ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_\n\n#ifndef _ASMLANGUAGE\n\n#include <zephyr/types.h>\n\n#if defined(CONFIG_SOC_PIC32CM5164LS00048)\n#include <pic32cm5164ls00048.h>\n#include <port.h>\n#else\n#error \"Library does not support the specified device.\"\n#endif\n\n#include <pic32cm_ls00_soc.h>\n\n#endif /* _ASMLANGUAGE */\n\n#endif /* ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> SoC top header that imports the official Microchip DFP register header <code>pic32cm5164ls00048.h</code> when <code>CONFIG_SOC_PIC32CM5164LS00048</code> is active."}};
+    const socFileDb = {"soc-yml": {"title": "soc.yml", "code": "family:\n- name: microchip_pic32cm_ls\n  series:\n  - name: pic32cm_ls00\n    socs:\n    - name: pic32cm5164ls00048", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Registers the <code>microchip_pic32cm_ls</code> family, the <code>pic32cm_ls00</code> series, and the target SoC <code>pic32cm5164ls00048</code> into Zephyr's hardware metadata system."}, "root-cmakelists": {"title": "CMakeLists.txt (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nadd_subdirectory(common)\nadd_subdirectory(${SOC_SERIES})", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Includes the shared <code>common/</code> directory and dynamically adds the specific SoC series directory (<code>pic32cm_ls00</code>) during the build."}, "root-kconfig": {"title": "Kconfig (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\tbool\n\nconfig SOC_FAMILY\n\tdefault \"microchip_pic32cm_ls\" if SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nrsource \"*/Kconfig.soc\"", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Declares the <code>SOC_FAMILY_MICROCHIP_PIC32CM_LS</code> symbol and recursively sources series-specific Kconfigs."}, "root-kconfig-defconfig": {"title": "Kconfig.defconfig (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nif SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nconfig CPU_CORTEX_M23\n\tdefault y\n\nconfig ARM_MPU\n\tdefault y\n\nconfig CORTEX_M_SYSTICK\n\tdefault y\n\nconfig NUM_IRQS\n\tdefault 136\n\nendif # SOC_FAMILY_MICROCHIP_PIC32CM_LS", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Sets hardware defaults for the Cortex-M23 core, ARM MPU, SysTick timer, and specifies 136 interrupt lines in the NVIC."}, "root-kconfig-soc": {"title": "Kconfig.soc (root)", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\tbool\n\nconfig SOC_FAMILY\n\tdefault \"microchip_pic32cm_ls\" if SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\nrsource \"*/Kconfig.soc\"", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Family-level Kconfig entry point defining the string name for the PIC32CM LS series."}, "common-cmakelists": {"title": "common/CMakeLists.txt", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nzephyr_sources(soc.c)\nzephyr_include_directories(.)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Adds the low-level <code>soc.c</code> boot file to the Zephyr build and includes the local header directory."}, "common-pinctrl": {"title": "common/pinctrl_soc.h", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_\n#define ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_\n\n#include <zephyr/types.h>\n\n#define MCHP_PORT_PINMUX(port, pin, func) \\\n\t(((port) << 16) | ((pin) << 8) | (func))\n\n#endif /* ZEPHYR_SOC_MICROCHIP_PIC32CM_LS_PINCTRL_SOC_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Defines the pin multiplexing macros for the Microchip Port G1 peripheral system."}, "common-soc": {"title": "common/soc.c (FDPLL96M 48MHz & ECC Zero-Init)", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <zephyr/devicetree.h>\n#include <soc.h>\n\n#define SRAM0_NODE DT_CHOSEN(zephyr_sram)\n#define SRAM0_BASE DT_REG_ADDR(SRAM0_NODE)\n#define SRAM0_SIZE DT_REG_SIZE(SRAM0_NODE)\n#define TIMEOUT_CYCLES 10000U\n\nvoid pic32cm_ls_clock_init(void)\n{\n\t/* 1. Flash 2 wait states for 48 MHz operation at PL2 */\n\tNVMCTRL_REGS->NVMCTRL_CTRLB = (NVMCTRL_REGS->NVMCTRL_CTRLB & ~NVMCTRL_CTRLB_RWS_Msk) | NVMCTRL_CTRLB_RWS(2);\n\n\t/* 2. Switch PM to Performance Level 2 (PL2) */\n\tPM_REGS->PM_PLCFG = PM_PLCFG_PLSEL_PL2;\n\n\t/* 3. Configure OSC16M at 16 MHz */\n\tOSCCTRL_REGS->OSCCTRL_OSC16MCTRL = OSCCTRL_OSC16MCTRL_FSEL_16MHZ | OSCCTRL_OSC16MCTRL_ENABLE(1);\n\n\t/* 4. GCLK1 divides 16 MHz by 16 => 1.0 MHz reference */\n\tGCLK_REGS->GCLK_GENCTRL[1] = GCLK_GENCTRL_SRC_OSC16M | GCLK_GENCTRL_DIV(16) | GCLK_GENCTRL_GENEN(1);\n\n\t/* 5. Connect GCLK1 to FDPLL channel 0 */\n\tGCLK_REGS->GCLK_PCHCTRL[OSCCTRL_GCLK_ID_FDPLL] = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN(1);\n\n\t/* 6. Configure FDPLL Multiplier: 1.0 MHz * 48 = 48.0 MHz */\n\tOSCCTRL_REGS->OSCCTRL_DPLLRATIO = OSCCTRL_DPLLRATIO_LDR(47);\n\tOSCCTRL_REGS->OSCCTRL_DPLLCTRLA = OSCCTRL_DPLLCTRLA_ENABLE(1);\n\n\t/* 7. Switch main GCLK0 to FDPLL96M (48 MHz) */\n\tGCLK_REGS->GCLK_GENCTRL[0] = GCLK_GENCTRL_SRC_FDPLL96M | GCLK_GENCTRL_GENEN(1);\n}\n\nvoid __attribute__((naked)) soc_reset_hook(void)\n{\n\t__asm__ volatile(\n\t\t\"ldr r0, =%0\\n\"\n\t\t\"ldr r1, =%1\\n\"\n\t\t\"movs r2, #0\\n\"\n\t\t\"1:\\n\"\n\t\t\"stm r0!, {r2}\\n\"\n\t\t\"cmp r0, r1\\n\"\n\t\t\"bne 1b\\n\"\n\t\t\"push {r4, lr}\\n\"\n\t\t\"bl pic32cm_ls_clock_init\\n\"\n\t\t\"pop {r4, pc}\\n\"\n\t\t:\n\t\t: \"i\"(SRAM0_BASE), \"i\"(SRAM0_BASE + SRAM0_SIZE)\n\t\t: \"r0\", \"r1\", \"r2\", \"memory\"\n\t);\n}", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Implements <code>pic32cm_ls_clock_init()</code> (48 MHz FDPLL96M oscillator switch at PL2) and <code>soc_reset_hook()</code> (Thumb assembly SRAM zero-init loop to avoid false ECC parity traps)."}, "ls00-kconfig-soc": {"title": "pic32cm_ls00/Kconfig.soc", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nconfig SOC_SERIES_PIC32CM_LS00\n\tbool\n\tselect SOC_FAMILY_MICROCHIP_PIC32CM_LS\n\thelp\n\t  Enable support for Microchip PIC32CM LS00 Cortex-M23 microcontrollers.\n\nconfig SOC_SERIES\n\tdefault \"pic32cm_ls00\" if SOC_SERIES_PIC32CM_LS00\n\nconfig SOC_PIC32CM5164LS00048\n\tbool\n\tselect SOC_SERIES_PIC32CM_LS00\n\nconfig SOC\n\tdefault \"pic32cm5164ls00048\" if SOC_PIC32CM5164LS00048", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Declares <code>SOC_SERIES_PIC32CM_LS00</code> and the target chip symbol <code>SOC_PIC32CM5164LS00048</code>."}, "ls00-dtsi": {"title": "pic32cm_ls00/pic32cm5164ls00048.dtsi", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <arm/armv8-m.dtsi>\n\n/ {\n\tcpus {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <0>;\n\n\t\tcpu0: cpu@0 {\n\t\t\tdevice_type = \"cpu\";\n\t\t\tcompatible = \"arm,cortex-m23\";\n\t\t\treg = <0>;\n\t\t\t#address-cells = <1>;\n\t\t\t#size-cells = <1>;\n\t\t\tclocks = <&mclk 0>;\n\t\t};\n\t};\n\n\tsram0: memory@20000000 {\n\t\tcompatible = \"mmio-sram\";\n\t\treg = <0x20000000 0x10000>; /* 64KB SRAM */\n\t};\n\n\tflash0: flash@0 {\n\t\tcompatible = \"soc-nv-flash\";\n\t\treg = <0x0 0x80000>; /* 512KB Flash */\n\t};\n\n\tsoc {\n\t\tnvmctrl: nvmctrl@41004000 {\n\t\t\tcompatible = \"microchip,pic32cm-ls-nvmctrl\", \"atmel,sam0-nvmctrl\";\n\t\t\treg = <0x41004000 0x400>;\n\t\t\tinterrupts = <28 0>;\n\t\t};\n\n\t\tclock: clock@40000800 {\n\t\t\tcompatible = \"microchip,pic32cm-ls-clock\";\n\t\t\treg = <0x40000800 0x400>;\n\t\t};\n\n\t\tporta: gpio@40003000 {\n\t\t\tcompatible = \"atmel,sam0-gpio\";\n\t\t\treg = <0x40003000 0x80>;\n\t\t\tgpio-controller;\n\t\t\t#gpio-cells = <2>;\n\t\t};\n\n\t\tportb: gpio@40003080 {\n\t\t\tcompatible = \"atmel,sam0-gpio\";\n\t\t\treg = <0x40003080 0x80>;\n\t\t\tgpio-controller;\n\t\t\t#gpio-cells = <2>;\n\t\t};\n\t};\n};", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Hardware Devicetree for <code>pic32cm5164ls00048</code> defining Cortex-M23, 64KB SRAM, 512KB Flash, NVMCTRL, Clock, and PORTA/PORTB."}, "ls00-soc-c": {"title": "pic32cm_ls00/soc.c", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <zephyr/kernel.h>\n#include <zephyr/init.h>\n#include <soc.h>\n\nstatic int pic32cm_ls00_init(void)\n{\n\treturn 0;\n}\n\nSYS_INIT(pic32cm_ls00_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Standard Zephyr <code>PRE_KERNEL_1</code> initialization hook for the PIC32CM LS00 family."}, "ls00-soc-h": {"title": "pic32cm_ls00/soc.h", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_\n#define ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_\n\n#ifndef _ASMLANGUAGE\n\n#include <zephyr/types.h>\n\n#if defined(CONFIG_SOC_PIC32CM5164LS00048)\n#include <pic32cm5164ls00048.h>\n#include <port.h>\nelse\n#error \"Library does not support the specified device.\"\n#endif\n\n#include <pic32cm_ls00_soc.h>\n\n#endif /* _ASMLANGUAGE */\n\n#endif /* ZEPHYR_SOC_MICROCHIP_PIC32CM_LS00_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> SoC top header that imports the official Microchip DFP register header <code>pic32cm5164ls00048.h</code> when <code>CONFIG_SOC_PIC32CM5164LS00048</code> is active."}};
+    const driverFileDb = {"gpio-c": {"title": "drivers/gpio/gpio_sam0.c", "code": "/*\n * Copyright (c) 2019 Google LLC\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#define DT_DRV_COMPAT atmel_sam0_gpio\n\n#include <zephyr/drivers/gpio.h>\n#include <zephyr/drivers/gpio/gpio_utils.h>\n#include <soc.h>\n\nstruct gpio_sam0_config {\n\tstruct gpio_driver_config common;\n\tPortGroup *regs;\n};\n\nstruct gpio_sam0_data {\n\tstruct gpio_driver_data common;\n\tsys_slist_t callbacks;\n};\n\nstatic int gpio_sam0_pin_configure(const struct device *port,\n\t\t\t\t   gpio_pin_t pin,\n\t\t\t\t   gpio_flags_t flags)\n{\n\tconst struct gpio_sam0_config *config = port->config;\n\tPortGroup *regs = config->regs;\n\n\tif ((flags & GPIO_OUTPUT) != 0) {\n\t\tregs->DIRSET.reg = BIT(pin);\n\t} else {\n\t\tregs->DIRCLR.reg = BIT(pin);\n\t}\n\treturn 0;\n}\n\nstatic const struct gpio_driver_api gpio_sam0_api = {\n\t.pin_configure = gpio_sam0_pin_configure,\n\t.port_get_raw = gpio_sam0_port_get_raw,\n\t.port_set_masked_raw = gpio_sam0_port_set_masked_raw,\n\t.port_set_bits_raw = gpio_sam0_port_set_bits_raw,\n\t.port_clear_bits_raw = gpio_sam0_port_clear_bits_raw,\n\t.port_toggle_bits = gpio_sam0_port_toggle_bits,\n};\n\n#define GPIO_SAM0_INIT(n)                                                      \\\n\tstatic const struct gpio_sam0_config gpio_sam0_config_##n = {               \\\n\t\t.common = {                                                                \\\n\t\t\t.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                   \\\n\t\t},                                                                         \\\n\t\t.regs = (PortGroup *)DT_INST_REG_ADDR(n),                                 \\\n\t};                                                                           \\\n\tstatic struct gpio_sam0_data gpio_sam0_data_##n;                             \\\n\tDEVICE_DT_INST_DEFINE(n, gpio_sam0_init, NULL, &gpio_sam0_data_##n,         \\\n\t\t\t      &gpio_sam0_config_##n, PRE_KERNEL_1,                           \\\n\t\t\t      CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);\n\nDT_INST_FOREACH_STATUS_OKAY(GPIO_SAM0_INIT)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Implements the generic <code>gpio_driver_api</code> on top of Microchip's Port G1 hardware registers (<code>DIRSET</code>, <code>DIRCLR</code>, <code>OUTSET</code>, <code>OUTCLR</code>, <code>IN</code>). Statically bound at compile time using <code>DEVICE_DT_INST_DEFINE()</code>."}, "gpio-yaml": {"title": "dts/bindings/gpio/atmel,sam0-gpio.yaml", "code": "description: SAM0 GPIO PORT node\n\ncompatible: \"atmel,sam0-gpio\"\n\ninclude: [gpio-controller.yaml, base.yaml]\n\nproperties:\n  reg:\n    required: true\n\n  \"#gpio-cells\":\n    const: 2\n\n  \"#atmel,pin-cells\":\n    type: int\n    required: true\n    const: 2\n    description: Number of items to expect in a atmel,pins specifier\n\ngpio-cells:\n  - pin\n  - flags\n\natmel,pin-cells:\n  - pin\n  - peripheral", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Devicetree YAML binding for the Port G1 GPIO controller. Specifies mandatory <code>reg</code> address and declares <code>#gpio-cells: 2</code> (Pin Number + Flags like <code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>)."}, "uart-c": {"title": "drivers/serial/uart_sam0.c", "code": "/*\n * Copyright (c) 2017 Google LLC\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#define DT_DRV_COMPAT atmel_sam0_uart\n\n#include <zephyr/drivers/uart.h>\n#include <soc.h>\n\nstruct uart_sam0_config {\n\tSercomUsart *regs;\n\tuint32_t baudrate;\n\tuint32_t pads;\n};\n\nstatic int uart_sam0_poll_out(const struct device *dev, unsigned char c)\n{\n\tconst struct uart_sam0_config *config = dev->config;\n\tSercomUsart *regs = config->regs;\n\n\t/* Wait until Data Register Empty (DRE) flag is set */\n\twhile ((regs->INTFLAG.reg & SERCOM_USART_INTFLAG_DRE) == 0) {\n\t}\n\n\tregs->DATA.reg = c;\n\treturn 0;\n}\n\nstatic const struct uart_driver_api uart_sam0_driver_api = {\n\t.poll_in = uart_sam0_poll_in,\n\t.poll_out = uart_sam0_poll_out,\n\t.err_check = uart_sam0_err_check,\n};\n\n#define UART_SAM0_INIT(n)                                                      \\\n\tstatic const struct uart_sam0_config uart_sam0_config_##n = {                 \\\n\t\t.regs = (SercomUsart *)DT_INST_REG_ADDR(n),                              \\\n\t\t.baudrate = DT_INST_PROP(n, current_speed),                               \\\n\t};                                                                           \\\n\tDEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL, NULL,                         \\\n\t\t\t      &uart_sam0_config_##n, PRE_KERNEL_1,                           \\\n\t\t\t      CONFIG_SERIAL_INIT_PRIORITY, &uart_sam0_driver_api);\n\nDT_INST_FOREACH_STATUS_OKAY(UART_SAM0_INIT)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Implements the generic <code>uart_driver_api</code> (<code>poll_out</code>, <code>poll_in</code>, <code>fifo_fill</code>) using Microchip SERCOM USART registers. Transmits characters by writing to <code>SERCOM_USART_REGS-&gt;DATA</code> when <code>INTFLAG.DRE</code> is high."}, "uart-yaml": {"title": "dts/bindings/serial/atmel,sam0-uart.yaml", "code": "description: Atmel SAM0 SERCOM UART driver\n\ncompatible: \"atmel,sam0-uart\"\n\ninclude:\n  - name: uart-controller.yaml\n  - name: pinctrl-device.yaml\n\nproperties:\n  reg:\n    required: true\n\n  interrupts:\n    required: true\n\n  rxpo:\n    type: int\n    required: true\n    description: Receive Data Pinout (PAD0, PAD1, PAD2, PAD3)\n\n  txpo:\n    type: int\n    required: true\n    description: Transmit Data Pinout (PAD0, PAD2 with RTS/CTS)\n\n  current-speed:\n    type: int\n    description: Initial baud rate setting (e.g. 115200)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Devicetree YAML binding for the SERCOM UART controller. Validates base register address, NVIC interrupts, baud rate, and multiplexed RX/TX pinout settings (<code>rxpo</code>, <code>txpo</code>)."}, "leds-yaml": {"title": "dts/bindings/led/gpio-leds.yaml", "code": "description: GPIO LEDs parent node\n\ncompatible: \"gpio-leds\"\n\ninclude: base.yaml\n\nchild:\n  properties:\n    gpios:\n      type: phandle-array\n      required: true\n      description: GPIO specifier for LED (e.g. <&porta 15 GPIO_ACTIVE_LOW>)\n\n    label:\n      type: string\n      description: Human-readable name for the LED", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Standard Zephyr binding for GPIO-driven LEDs. Enables user applications to control LEDs via Devicetree aliases like <code>led0 = &amp;led0;</code>."}};
+    const armDtsFileDb = {"pic32cm_ls-dtsi": {"title": "dts/arm/microchip/pic32c/pic32cm_ls/common/pic32cm_ls.dtsi", "code": "/*\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <arm/armv8-m.dtsi>\n#include <zephyr/dt-bindings/gpio/gpio.h>\n\n/ {\n\tcpus {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <0>;\n\n\t\tcpu0: cpu@0 {\n\t\t\tdevice_type = \"cpu\";\n\t\t\tcompatible = \"arm,cortex-m23\";\n\t\t\treg = <0>;\n\t\t\t#address-cells = <1>;\n\t\t\t#size-cells = <1>;\n\n\t\t\tmpu: mpu@e000ed90 {\n\t\t\t\tcompatible = \"arm,armv8m-mpu\";\n\t\t\t\treg = <0xe000ed90 0x40>;\n\t\t\t};\n\t\t};\n\t};\n\n\tsoc {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <1>;\n\n\t\tsram0: memory@20000000 {\n\t\t\tcompatible = \"mmio-sram\";\n\t\t\treg = <0x20000000 0x10000>;\n\t\t};\n\n\t\tpinctrl: pinctrl@40003200 {\n\t\t\tcompatible = \"microchip,port-g1-pinctrl\";\n\t\t\t#address-cells = <1>;\n\t\t\t#size-cells = <1>;\n\t\t\treg = <0x40003200 0x100>;\n\t\t\tranges = <0x40003200 0x40003200 0x100>;\n\n\t\t\tporta: gpio@40003200 {\n\t\t\t\tcompatible = \"microchip,port-g1-gpio\";\n\t\t\t\treg = <0x40003200 0x80>;\n\t\t\t\tgpio-controller;\n\t\t\t\t#gpio-cells = <2>;\n\t\t\t\t#microchip,pin-cells = <2>;\n\t\t\t\tstatus = \"okay\";\n\t\t\t};\n\n\t\t\tportb: gpio@40003280 {\n\t\t\t\tcompatible = \"microchip,port-g1-gpio\";\n\t\t\t\treg = <0x40003280 0x80>;\n\t\t\t\tgpio-controller;\n\t\t\t\t#gpio-cells = <2>;\n\t\t\t\t#microchip,pin-cells = <2>;\n\t\t\t\tstatus = \"okay\";\n\t\t\t};\n\t\t};\n\t};\n};\n\n&nvic {\n\tarm,num-irq-priority-bits = <2>;\n};", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Root SoC Devicetree definition defining the Arm Cortex-M23 CPU core, ARMv8-M MPU (<code>0xe000ed90</code>), default SRAM0 base (<code>0x20000000</code>), Port G1 Pin Controller (<code>0x40003200</code>), PORTA/PORTB GPIO controllers, and 2-bit NVIC interrupt priority."}, "pic32cm_ls_48-dtsi": {"title": "dts/arm/microchip/pic32c/pic32cm_ls/common/pic32cm_ls_48.dtsi", "code": "/*\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <microchip/pic32c/pic32cm_ls/common/pic32cm_ls.dtsi>", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Package-level hardware include for the 48-pin microcontroller variant. Includes the root <code>pic32cm_ls.dtsi</code> file to expose all 48-pin available peripherals (PORTA and PORTB lines)."}, "pic32cm_5164_ls-dtsi": {"title": "dts/arm/microchip/pic32c/pic32cm_ls/common/pic32cm_5164_ls.dtsi", "code": "/*\n * Copyright (c) 2026 Microchip Technology Inc.\n *\n * SPDX-License-Identifier: Apache-2.0\n */\n\n/ {\n\tsoc {\n\t\tflash0: flash@0 {\n\t\t\treg = <0x0 DT_SIZE_K(512)>;\n\t\t};\n\n\t\tsram0: memory@20000000 {\n\t\t\treg = <0x20000000 DT_SIZE_K(64)>;\n\t\t};\n\t};\n};", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Memory-level Devicetree fragment establishing the exact physical memory boundaries: <strong>512 KiB Flash</strong> (<code>0x00000000</code> to <code>0x00080000</code>) and <strong>64 KiB SRAM</strong> (<code>0x20000000</code> to <code>0x20010000</code>)."}, "pic32cm5164ls00048-dtsi": {"title": "dts/arm/microchip/pic32c/pic32cm_ls/pic32cm_ls00/pic32cm5164ls00048.dtsi", "code": "/*\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#include <mem.h>\n#include <microchip/pic32c/pic32cm_ls/common/pic32cm_ls_48.dtsi>\n#include <microchip/pic32c/pic32cm_ls/common/pic32cm_5164_ls.dtsi>", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Chip top-level Devicetree file for part number <code>pic32cm5164ls00048</code>. Combines package peripherals (<code>pic32cm_ls_48.dtsi</code>) with memory sizing (<code>pic32cm_5164_ls.dtsi</code>) and Zephyr memory macros (<code>mem.h</code>)."}};
+    const dtBindingsFileDb = {"gpio-yaml": {"title": "dts/bindings/gpio/atmel,sam0-gpio.yaml", "code": "description: SAM0 GPIO PORT node\n\ncompatible: \"atmel,sam0-gpio\"\n\ninclude: [gpio-controller.yaml, base.yaml]\n\nproperties:\n  reg:\n    required: true\n\n  \"#gpio-cells\":\n    required: true\n    const: 2\n\n  \"#atmel,pin-cells\":\n    type: int\n    required: true\n    const: 2\n    description: Number of items to expect in a atmel,pins specifier\n\ngpio-cells:\n  - pin\n  - flags\n\natmel,pin-cells:\n  - pin\n  - peripheral", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Devicetree YAML binding for the Port G1 GPIO controller. Specifies mandatory <code>reg</code> address and declares <code>#gpio-cells: 2</code> (Pin Number + Flags like <code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>)."}, "uart-yaml": {"title": "dts/bindings/serial/atmel,sam0-uart.yaml", "code": "description: Atmel SAM0 SERCOM UART driver\n\ncompatible: \"atmel,sam0-uart\"\n\ninclude: [uart-controller.yaml, pinctrl-device.yaml]\n\nproperties:\n  reg:\n    required: true\n\n  interrupts:\n    required: true\n\n  rxpo:\n    type: int\n    required: true\n    description: Receive Data Pinout (PAD0, PAD1, PAD2, PAD3)\n\n  txpo:\n    type: int\n    required: true\n    description: Transmit Data Pinout (PAD0, PAD2 with RTS/CTS)\n\n  current-speed:\n    type: int\n    description: Initial baud rate setting (e.g. 115200)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Devicetree YAML binding for the SERCOM UART controller. Validates base register address, NVIC interrupts, baud rate, and multiplexed RX/TX pinout settings (<code>rxpo</code>, <code>txpo</code>)."}, "dt-gpio-h": {"title": "include/zephyr/dt-bindings/gpio/gpio.h", "code": "/*\n * Copyright (c) 2019 Nordic Semiconductor ASA\n * SPDX-License-Identifier: Apache-2.0\n */\n#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_\n#define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_\n\n/**\n * @name GPIO drive modes\n * @{\n */\n#define GPIO_ACTIVE_LOW         (1 << 0)\n#define GPIO_ACTIVE_HIGH        (0 << 0)\n#define GPIO_PULL_UP            (1 << 4)\n#define GPIO_PULL_DOWN          (1 << 5)\n#define GPIO_OPEN_DRAIN         (1 << 8)\n#define GPIO_OPEN_SOURCE        (1 << 9)\n\n#define GPIO_VOLTAGE_POS        10\n#define GPIO_VOLTAGE_MASK       (0x3 << GPIO_VOLTAGE_POS)\n/** @} */\n\n#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Shared C / Devicetree header providing preprocessor flags (<code>GPIO_ACTIVE_LOW</code>, <code>GPIO_PULL_UP</code>, <code>GPIO_OPEN_DRAIN</code>) used in both <code>.dts</code> nodes and C drivers."}, "leds-yaml": {"title": "dts/bindings/led/gpio-leds.yaml", "code": "description: GPIO LEDs parent node\n\ncompatible: \"gpio-leds\"\n\ninclude: base.yaml\n\nchild:\n  properties:\n    gpios:\n      type: phandle-array\n      required: true\n      description: GPIO specifier for LED (e.g. <&porta 15 GPIO_ACTIVE_LOW>)\n\n    label:\n      type: string\n      description: Human-readable name for the LED", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Standard Zephyr binding for GPIO-driven LEDs. Enables user applications to control LEDs via Devicetree aliases like <code>led0 = &amp;led0;</code>."}, "keys-yaml": {"title": "dts/bindings/input/gpio-keys.yaml", "code": "description: GPIO KEYS parent node\n\ncompatible: \"gpio-keys\"\n\ninclude: base.yaml\n\nchild:\n  properties:\n    gpios:\n      type: phandle-array\n      required: true\n      description: GPIO specifier for user button (e.g. <&porta 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>)\n\n    label:\n      type: string\n      description: Human-readable name for the button\n\n    zephyr,code:\n      type: int\n      description: Linux input event key code (e.g. INPUT_KEY_0)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Standard Zephyr binding for GPIO-driven user push buttons. Binds the SW0 button on PA23 to standard input subsystem interrupts."}};
+    const halPacksFileDb = {"pic32c-h": {"title": "modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/include/pic32c.h", "code": "/*\n * Top level header file for PIC32CM LS00\n * Copyright (c) 2023-2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef _PIC32C_H_\n#define _PIC32C_H_\n\n#if   defined(__PIC32CM1216LS00032__)\n  #include \"pic32cm1216ls00032.h\"\n#elif defined(__PIC32CM1216LS00048__)\n  #include \"pic32cm1216ls00048.h\"\n#elif defined(__PIC32CM2532LS00048__)\n  #include \"pic32cm2532ls00048.h\"\n#elif defined(__PIC32CM2532LS00064__)\n  #include \"pic32cm2532ls00064.h\"\n#elif defined(__PIC32CM5164LS00048__)\n  #include \"pic32cm5164ls00048.h\"\n#elif defined(__PIC32CM5164LS00064__)\n  #include \"pic32cm5164ls00064.h\"\n#elif defined(__PIC32CM5164LS00100__)\n  #include \"pic32cm5164ls00100.h\"\n#else\n  #error Library does not support the specified device\n#endif\n\n#endif /* _PIC32C_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Top-level device selector header. Checks compiler preprocessor symbols (like <code>__PIC32CM5164LS00048__</code>) and conditionally includes the target chip header <code>pic32cm5164ls00048.h</code>."}, "chip-h": {"title": "modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/include/pic32cm5164ls00048.h", "code": "/*\n * Device Header File for PIC32CM5164LS00048 (EV41C56A)\n * Copyright (c) 2023-2026 Microchip Technology Inc.\n * SPDX-License-Identifier: Apache-2.0\n */\n\n#ifndef _PIC32CM5164LS00048_H_\n#define _PIC32CM5164LS00048_H_\n\n/* Configuration of the Cortex-M23 Processor and Core Peripherals */\n#define __CM23_REV                0x0100U\n#define __NVIC_PRIO_BITS          2U\n#define __Vendor_SysTickConfig    0U\n#define __VTOR_PRESENT            1U\n#define __MPU_PRESENT             1U\n#define __FPU_PRESENT             0U\n#define __DSP_PRESENT             0U\n#define __SAUREGION_PRESENT       1U\n\n/* Interrupt Number Definition */\ntypedef enum IRQn {\n  Reset_IRQn                = -15,\n  NonMaskableInt_IRQn       = -14,\n  HardFault_IRQn            = -13,\n  SVCall_IRQn               =  -5,\n  PendSV_IRQn               =  -2,\n  SysTick_IRQn              =  -1,\n  SYSTEM_IRQn               =   0,\n  WDT_IRQn                  =   1,\n  RTC_IRQn                  =   2,\n  EIC_EXTINT_0_IRQn         =   3,\n  EIC_EXTINT_1_IRQn         =   4,\n  /* ... 136 total NVIC IRQ lines ... */\n  SERCOM0_0_IRQn            =  65,\n  SERCOM0_1_IRQn            =  66,\n  SERCOM0_2_IRQn            =  67,\n  SERCOM0_OTHER_IRQn        =  68,\n} IRQn_Type;\n\n#include \"core_cm23.h\"\n#include \"system_pic32cmls00.h\"\n#endif /* _PIC32CM5164LS00048_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> 64 KB comprehensive chip header defining processor core capabilities (ARMv8-M Cortex-M23, 2-bit NVIC priority), full <code>IRQn_Type</code> enum mapping, memory maps, and CMSIS includes."}, "comp-port-h": {"title": "modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/include/component/port.h", "code": "/*\n * Component description for PORT (Port G1 GPIO Controller)\n * Copyright (c) 2023-2026 Microchip Technology Inc.\n */\n\n#ifndef _PIC32CMLS00_PORT_COMPONENT_H_\n#define _PIC32CMLS00_PORT_COMPONENT_H_\n\ntypedef struct\n{\n  __IO  uint32_t   PORT_DIR;       /* Offset: 0x00 (R/W 32) Data Direction */\n  __IO  uint32_t   PORT_DIRCLR;    /* Offset: 0x04 (R/W 32) Data Direction Clear */\n  __IO  uint32_t   PORT_DIRSET;    /* Offset: 0x08 (R/W 32) Data Direction Set */\n  __IO  uint32_t   PORT_DIRTGL;    /* Offset: 0x0C (R/W 32) Data Direction Toggle */\n  __IO  uint32_t   PORT_OUT;       /* Offset: 0x10 (R/W 32) Data Output Value */\n  __IO  uint32_t   PORT_OUTCLR;    /* Offset: 0x14 (R/W 32) Data Output Value Clear */\n  __IO  uint32_t   PORT_OUTSET;    /* Offset: 0x18 (R/W 32) Data Output Value Set */\n  __IO  uint32_t   PORT_OUTTGL;    /* Offset: 0x1C (R/W 32) Data Output Value Toggle */\n  __I   uint32_t   PORT_IN;        /* Offset: 0x20 (R/  32) Data Input Value */\n  __IO  uint32_t   PORT_CTRL;      /* Offset: 0x24 (R/W 32) Control */\n  __O   uint32_t   PORT_WRCONFIG;  /* Offset: 0x28 ( /W 32) Write Configuration */\n  __IO  uint32_t   PORT_EVCTRL;    /* Offset: 0x2C (R/W 32) Event Input Control */\n  __IO  uint8_t    PORT_PMUX[16];  /* Offset: 0x30 (R/W  8) Peripheral Multiplexing */\n  __IO  uint8_t    PORT_PINCFG[32];/* Offset: 0x40 (R/W  8) Pin Configuration */\n  __IO  uint32_t   PORT_INTENCLR;  /* Offset: 0x60 (R/W 32) Interrupt Enable Clear */\n  __IO  uint32_t   PORT_INTENSET;  /* Offset: 0x64 (R/W 32) Interrupt Enable Set */\n  __IO  uint32_t   PORT_INTFLAG;   /* Offset: 0x68 (R/W 32) Interrupt Flag Status */\n  __IO  uint32_t   PORT_NONSEC;    /* Offset: 0x6C (R/W 32) Security Attribution */\n  __IO  uint32_t   PORT_NSCHK;     /* Offset: 0x70 (R/W 32) Security Attribution Check */\n} port_group_registers_t;\n\n#endif /* _PIC32CMLS00_PORT_COMPONENT_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Hardware struct definition for Port G1 GPIO registers. Directly mapped by Zephyr's <code>drivers/gpio/gpio_sam0.c</code> driver to perform atomic bitwise operations (<code>PORT_DIRSET</code>, <code>PORT_OUTTGL</code>, <code>PORT_IN</code>)."}, "comp-sercom-h": {"title": "modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/include/component/sercom.h", "code": "/*\n * Component description for SERCOM (Serial Communication Interface)\n * Copyright (c) 2023-2026 Microchip Technology Inc.\n */\n\n#ifndef _PIC32CMLS00_SERCOM_COMPONENT_H_\n#define _PIC32CMLS00_SERCOM_COMPONENT_H_\n\ntypedef struct\n{\n  __IO  uint32_t   CTRLA;      /* Offset: 0x00 (R/W 32) USART Control A */\n  __IO  uint32_t   CTRLB;      /* Offset: 0x04 (R/W 32) USART Control B */\n  __IO  uint32_t   CTRLC;      /* Offset: 0x08 (R/W 32) USART Control C */\n  __IO  uint16_t   BAUD;       /* Offset: 0x0C (R/W 16) USART Baud Rate */\n  __IO  uint8_t    RXPL;       /* Offset: 0x0E (R/W  8) Receive Pulse Length */\n  __IO  uint8_t    INTENCLR;   /* Offset: 0x14 (R/W  8) Interrupt Enable Clear */\n  __IO  uint8_t    INTENSET;   /* Offset: 0x16 (R/W  8) Interrupt Enable Set */\n  __IO  uint8_t    INTFLAG;    /* Offset: 0x18 (R/W  8) Interrupt Flag Status */\n  __IO  uint16_t   STATUS;     /* Offset: 0x1A (R/W 16) USART Status */\n  __IO  uint32_t   SYNCBUSY;   /* Offset: 0x1C (R/  32) Synchronization Busy */\n  __IO  uint16_t   DATA;       /* Offset: 0x28 (R/W 16) USART Data */\n} sercom_usart_registers_t;\n\n#endif /* _PIC32CMLS00_SERCOM_COMPONENT_H_ */", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Hardware struct definition for SERCOM USART mode. Mapped by Zephyr's <code>drivers/serial/uart_sam0.c</code> driver to poll <code>INTFLAG.DRE</code> and write transmitted bytes to <code>DATA</code>."}, "pack-cmakelists": {"title": "modules/hal/microchip/packs/pic32c/pic32cm_ls/pic32cm_ls00/CMakeLists.txt", "code": "# Copyright (c) 2026 Microchip Technology Inc.\n# SPDX-License-Identifier: Apache-2.0\n\nzephyr_include_directories(include)\nzephyr_include_directories(include/pio)\nzephyr_include_directories(include/component)\nzephyr_include_directories(include/instance)", "exp": "<strong>\ud83d\udca1 File Summary:</strong> Injects the DFP pack's include directories (<code>include</code>, <code>pio</code>, <code>component</code>, <code>instance</code>) into Zephyr's global include search path."}};
 
     function loadSocIdeFile(key, itemEl) {
       const items = document.querySelectorAll('#page-soc-doc .ide-file-item');
@@ -3098,6 +4224,58 @@ sudo cp edbg /usr/local/bin/</pre>
       }
     }
 
+    function loadArmDtsIdeFile(key, itemEl) {
+      const items = document.querySelectorAll('#page-dts-doc .ide-file-item');
+      items.forEach(el => el.classList.remove('active'));
+      itemEl.classList.add('active');
+
+      const data = armDtsFileDb[key];
+      if (data) {
+        document.getElementById('arm-dts-ide-active-tab').innerHTML = `<span>${data.title}</span>`;
+        document.getElementById('arm-dts-ide-pre').innerText = data.code;
+        document.getElementById('arm-dts-ide-explanation').innerHTML = data.exp;
+      }
+    }
+
+    function loadBindingsIdeFile(key, itemEl) {
+      const items = document.querySelectorAll('#page-bindings-doc .ide-file-item');
+      items.forEach(el => el.classList.remove('active'));
+      itemEl.classList.add('active');
+
+      const data = dtBindingsFileDb[key];
+      if (data) {
+        document.getElementById('bindings-ide-active-tab').innerHTML = `<span>${data.title}</span>`;
+        document.getElementById('bindings-ide-pre').innerText = data.code;
+        document.getElementById('bindings-ide-explanation').innerHTML = data.exp;
+      }
+    }
+
+    function loadHalPackIdeFile(key, itemEl) {
+      const items = document.querySelectorAll('#page-hal-packs-doc .ide-file-item');
+      items.forEach(el => el.classList.remove('active'));
+      itemEl.classList.add('active');
+
+      const data = halPacksFileDb[key];
+      if (data) {
+        document.getElementById('hal-pack-ide-active-tab').innerHTML = `<span>${data.title}</span>`;
+        document.getElementById('hal-pack-ide-pre').innerText = data.code;
+        document.getElementById('hal-pack-ide-explanation').innerHTML = data.exp;
+      }
+    }
+
+    function loadDriverIdeFile(key, itemEl) {
+      const items = document.querySelectorAll('#page-drivers-doc .ide-file-item');
+      items.forEach(el => el.classList.remove('active'));
+      itemEl.classList.add('active');
+
+      const data = driverFileDb[key];
+      if (data) {
+        document.getElementById('driver-ide-active-tab').innerHTML = `<span>${data.title}</span>`;
+        document.getElementById('driver-ide-pre').innerText = data.code;
+        document.getElementById('driver-ide-explanation').innerHTML = data.exp;
+      }
+    }
+
     function switchTab(tabKey) {
       const tabs = document.querySelectorAll('.header-nav .nav-tab');
       tabs.forEach(t => t.classList.remove('active'));
@@ -3106,12 +4284,20 @@ sudo cp edbg /usr/local/bin/</pre>
       const compPage = document.getElementById('page-comparison');
       const socPage = document.getElementById('page-soc-doc');
       const dtsPage = document.getElementById('page-dts-doc');
+      const bindingsPage = document.getElementById('page-bindings-doc');
+      const halPacksPage = document.getElementById('page-hal-packs-doc');
+      const driversPage = document.getElementById('page-drivers-doc');
+      const boardsLayerPage = document.getElementById('page-boards-layer');
       const docPage = document.getElementById('page-board-doc');
       
       historyPage.classList.remove('active');
       compPage.classList.remove('active');
       socPage.classList.remove('active');
       dtsPage.classList.remove('active');
+      bindingsPage.classList.remove('active');
+      halPacksPage.classList.remove('active');
+      driversPage.classList.remove('active');
+      boardsLayerPage.classList.remove('active');
       docPage.classList.remove('active');
       
       if (tabKey === 'history') {
@@ -3126,9 +4312,21 @@ sudo cp edbg /usr/local/bin/</pre>
       } else if (tabKey === 'dts-doc') {
         dtsPage.classList.add('active');
         tabs[3].classList.add('active');
+      } else if (tabKey === 'bindings-doc') {
+        bindingsPage.classList.add('active');
+        tabs[4].classList.add('active');
+      } else if (tabKey === 'hal-packs-doc') {
+        halPacksPage.classList.add('active');
+        tabs[5].classList.add('active');
+      } else if (tabKey === 'drivers-doc') {
+        driversPage.classList.add('active');
+        tabs[6].classList.add('active');
+      } else if (tabKey === 'boards-layer') {
+        boardsLayerPage.classList.add('active');
+        tabs[7].classList.add('active');
       } else if (tabKey === 'board-doc') {
         docPage.classList.add('active');
-        tabs[4].classList.add('active');
+        tabs[8].classList.add('active');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
